@@ -2,7 +2,9 @@
 
 # Introduction
 
-![Kumiko mascot by Cthulhulumaid, [CC-BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/ "Creative Commons License")](artwork/kumiko-big.png "Kumiko mascot by Cthulhulumaid")
+![Kumiko mascot by Cthulhulumaid](artwork/kumiko-big.png "Kumiko mascot by Cthulhulumaid")
+
+> Kumiko mascot by Cthulhulumaid, [CC-BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/ "Creative Commons License")
 
 *Kumiko, the Comics Cutter* is a set of tools to compute useful information about comic book pages, panels, and more.
 Its main strength is to find out the **locations of panels** within a comic's page (image file).
@@ -33,7 +35,9 @@ External programs can later use the generated information for different purposes
 
 Bing able to jump from one panel to the next was the original idea behind *Kumiko*.
 
-![[xkcd](https://www.xkcd.com) by Randall Munroe, [#208](https://www.xkcd.com/208/), [CC BY-NC 2.5](https://creativecommons.org/licenses/by-nc/2.5/)](doc/img/xkcd.png "xkcd")
+![xkcd #208](doc/img/xkcd.png "xkcd #208")
+
+> [xkcd](https://www.xkcd.com) by Randall Munroe, [#208](https://www.xkcd.com/208/), [CC BY-NC 2.5](https://creativecommons.org/licenses/by-nc/2.5/)
 
 Comic viewers usually imply a very common *page-by-page reading paradigm*.
 You read a page, possibly zooming on it to be able to read speech bubbles, then click, tap, press a key or swipe to go to the next page.
@@ -69,7 +73,9 @@ The numbering is left to right, top to bottom for now (see roadmap).
 
 Here is an example of how *Kumiko* is going to number panels by default (numbers and red lines not in the original picture).
 
-![[Pepper & Carott](https://www.peppercarrot.com/) by [David Revoy](https://www.davidrevoy.com), [episode 2](https://www.peppercarrot.com/en/article237/episode-2-rainbow-potions), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)](doc/img/numbering.png "Pepper&Carrot")
+![Pepper&Carrot](doc/img/numbering.png "Pepper&Carrot")
+
+> [Pepper & Carott](https://www.peppercarrot.com/) by [David Revoy](https://www.davidrevoy.com), [episode 2](https://www.peppercarrot.com/en/article237/episode-2-rainbow-potions), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 
 
 
