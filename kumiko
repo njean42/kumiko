@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+
+import sys, os, json
+import argparse
+from kumikolib import Kumiko
+
+
+parser = argparse.ArgumentParser(description='Kumiko CLI')
+
+# Utilities
+parser.add_argument('-d', '--debug', action='store_true', help='Debug mode, creates files with extra panel information and more')
+
+# Input/Output
+parser.add_argument('-i', '--input', nargs=1, required=True, help='A file or folder name')
+parser.add_argument('-o', '--output', nargs=1, help='A file name to save out to')
+
+
+args = parser.parse_args()
+k = Kumiko({
+	'debug': args.debug
+})
+
+file_or_folder = args.input[0]
+
+if os.path.isdir(file_or_folder):
+	info = k.parse_dir(file_or_folder)
+elif os.path.isfile(file_or_folder):
+	info = k.parse_images([file_or_folder])
+else:
+	print "--input (-i) is not a file or directory: '"+file_or_folder+"'"
+	sys.exit()
+
+info = json.dumps(info)
+
+if args.output:
+	f = open(args.output[0], 'w')
+	f.write(info)
+	f.close()
+
+print info

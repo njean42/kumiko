@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<script src="jquery-3.2.1.min.js"></script>
+	<script src="reader.js"></script>
+</head>
+
+<body>
+	
+	<i class="tools burger">≡</i>
+	<div id="result">
+		<i class="tools prevPanel">←</i>
+	</div>
+	<div class="menu">
+		<div>
+			<label>
+				<input type="checkbox" name="panelview" checked="checked" />
+				Panel view (zoomed)
+			</label>
+		</div>
+		<div>
+			Go to page:
+			<select class="pagesel"></select>
+		</div>
+	</div>
+	
+	<style type="text/css">
+		body {
+			margin: 0;
+			width: 96vw;
+			height: 96vh;
+			margin-top: 2vh;
+			margin-left: 2vw;
+		}
+		.menu {
+			opacity: 0.9;
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 95vw;
+			margin-left: 2.5vw;
+			height: 95vh;
+			margin-top: 2.5vh;
+			z-index: 120;
+			
+			background-color: #7f8c8d;
+			border-radius: 1vmin;
+			font-size: 200%;
+			color: #ecf0f1;
+			
+			display: flex;
+			flex-direction: column;
+			justify-content: space-around;
+			align-items: center;
+		}
+		.hidden {
+			display: none;
+		}
+ 		#result {
+/* 			display: flex-item; */
+			position: relative;
+			z-index: 1;
+			width:  100%;
+			height: 100%;
+/* 			overflow: hidden; */
+			cursor: pointer;
+		}
+		.tools {
+			opacity: 0.1;
+			color: #3498db;
+			text-shadow: 1px 1px 10px #ecf0f1, -1px -1px 10px #ecf0f1, 1px -1px 10px #ecf0f1, -1px 1px 10px #ecf0f1;
+			width: 12vmin;
+			height: 20vmin;
+			font-size: 20vmin;
+			position: absolute;
+			z-index: 90;
+			line-height: 8vmin;
+		}
+		.tools.burger {
+			cursor: pointer;
+			right: 2vmin;
+			top: 2vmin;
+		}
+		
+		.panel {
+			z-index: 10;
+			position: absolute;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+		#result.debug .container:not(.zoomed) .panel {
+			border: 2px solid red;
+			margin-left: -2px;
+			margin-top: -2px;
+		}
+		#result.debug .container:not(.zoomed) .panel:hover {
+			background-color: rgba(52,152,219,0.5);
+		}
+		#result:not(.debug) .container .panel * {
+			display: none;
+		}
+		.container .panel span {
+			color: white;
+			font-size: 75%;
+			background-color: black;
+			opacity: 0.8;
+			border-radius: 30px;
+			padding: 2px 6px;
+		}
+		.panel span.panelnb { font-size: 150%; }
+		.panel span.top     { position: absolute; top: 0;    left: 45%; }
+		.panel span.bottom  { position: absolute; bottom: 0; left: 45%; }
+		.panel span.left    { position: absolute; left: 0;   top: 45%; }
+		.panel span.right   { position: absolute; right: 0;  top: 45%; }
+	</style>
+	
+	
+	<script type="text/javascript">
+		
+		$('.menu').toggleClass('hidden');
+		
+		$(document).ready( function () {
+			if (localStorage.debug == 'true')
+				$('#result').addClass('debug');
+		});
+		
+		var reader = new Reader({
+			container: $('#result'),
+			comicsPath: 'xkcd.json',
+		});
+		reader.loadPage();
+		
+		// PREVIOUS AND NEXT PAGE
+		$(document).delegate( '#result', 'click touch', function() {
+			if ($('input[name=panelview]').is(':checked'))
+				reader.nextPanel();
+			else
+				reader.loadNextPage();
+		});
+		
+		$(document).delegate( '#result .prevPanel', 'click touch', function(event) {
+			if ($('input[name=panelview]').is(':checked'))
+				reader.prevPanel();
+			else
+				reader.loadPrevPage();
+			event.stopPropagation();
+		});
+		
+		$(document).keydown(function(e) {
+		switch(e.which) {
+			case 37: // left
+			case 38: // up
+				$('#result .prevPanel').click();
+				break;
+
+			case 39: // right
+			case 40: // down
+				$('#result').click();
+				break;
+
+			default: return; // exit this handler for other keys
+		}
+		e.preventDefault(); // prevent the default action (scroll / move caret)
+	});
+		
+		
+		// PAGE SELECTION
+		$(document).delegate( '.menu .pagesel', 'change', function(event) {
+			if ($(this).val())
+				reader.loadPage(parseInt($(this).val()));
+			$('.menu').toggleClass('hidden');
+		});
+		
+		$(document).delegate( '.menu', 'click touch', function(event) {
+			$('.menu').toggleClass('hidden');
+		});
+		$(document).delegate( '.menu *', 'click touch', function(event) {
+			event.stopPropagation();
+		});
+		
+		$(document).delegate('.burger', 'click touch', function() {
+			if ($('.menu').hasClass('hidden'))
+				loadPageSelect();
+			$('.menu').toggleClass('hidden');
+		});
+		
+		$(document).delegate('input[name=panelview]', 'change', function() {
+			$('.menu').toggleClass('hidden');
+// 			window.location.reload();
+			if ($(this).is(':checked'))
+				reader.zoomOn($('.panel').eq(0));
+			else
+				window.location.reload();  // TODO: reader.dezoom();
+		});
+		
+		function loadPageSelect () {
+			var pages = reader.getPages();
+			if (!pages)
+				return;
+			
+			$('.pagesel option').remove();
+			for (var page in pages) {
+				var sel = page == reader.getCurrentPage() ? 'selected="selected"' : '';
+				$('.pagesel').append('<option value="'+page+'" '+sel+'>'+(page == reader.getCurrentPage() ? '='+page+'=' : page)+'</option>');
+			}
+		}
+		
+	</script>
+	
+</body>
+</html>
