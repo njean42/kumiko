@@ -33,7 +33,7 @@ External programs can later use the generated information for different purposes
 
 ## Panel-by-panel comic reading
 
-Bing able to jump from one panel to the next was the original idea behind *Kumiko*.
+Being able to jump from one panel to the next was the original idea behind *Kumiko*.
 
 ![xkcd #208](doc/img/xkcd.png "xkcd #208")
 

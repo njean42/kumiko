@@ -25,7 +25,7 @@ The result would look like the following:
 		}
 	]
 
-(Note that the resulting JSON-formatted data is already a list, with just one object representing the extracted information about your image.
+(Note that the resulting JSON-formatted data is already a list, with just one object representing the extracted information about our image.
 This is for compatibility with generating information for several pages in one directory, see next section.)
 
 ### Panels
@@ -41,7 +41,7 @@ We may want an option in the future to get more accurate polygons instead.
 
 ### File names
 
-The `filename`s in our JSON object are relative to the working directory from which you invoked the `./kumiko` command.
+The `filename`s in our JSON object are relative to the working directory from which we invoked the `./kumiko` command.
 
 
 ## Get panel information for all pages in one comic book
