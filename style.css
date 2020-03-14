@@ -1,0 +1,81 @@
+
+body {
+	margin: 0;
+	width: 96vw;
+	height: 96vh;
+	margin-top: 2vh;
+	margin-left: 2vw;
+}
+.hidden {
+	display: none;
+}
+
+/*****  CONTAINER & BUTTONS  *****/
+
+#result {
+	z-index: 1;
+	height: 600px;
+	width:  600px;
+	cursor: pointer;
+	border: 1px dotted blue;
+	overflow: hidden;
+}
+.tools {
+	opacity: 0.5;
+	color: #ecf0f1;
+	background-color: #2c3e50;
+	padding: 5px;
+	border-radius: 5px;
+	/*width: 12vmin;
+	height: 20vmin;*/
+	
+	font-size: 8vmin;
+	position: absolute;
+	z-index: 90;
+	line-height: 8vmin;
+}
+.panelpages input {
+	display: none;
+}
+input[name=panelview]:checked + span {
+	width: 1em;
+	height: 1em;
+}
+input[name=panelview]:checked + span,
+input[name=panelview]:not(:checked) + span + span {
+	background-color: #9b59b6;
+}
+
+/*****  PANELS  *****/
+.panel {
+	z-index: 10;
+	position: absolute;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+#result.debug .container:not(.zoomed) .panel {
+	border: 2px solid red;
+	margin-left: -2px;
+	margin-top: -2px;
+}
+#result.debug .container:not(.zoomed) .panel:hover {
+	background-color: rgba(52,152,219,0.5);
+}
+#result:not(.debug) .container .panel *,
+#result.debug .container.zoomed .panel * {
+	display: none;
+}
+#result.debug .container:not(.zoomed) .panel span {
+	color: white;
+	font-size: 75%;
+	background-color: black;
+	opacity: 0.8;
+	border-radius: 30px;
+	padding: 2px 6px;
+}
+#result.debug .container:not(.zoomed) .panel span.panelnb { font-size: 150%; }
+/*.panel span.top     { position: absolute; top: 0;    left: 45%; }
+.panel span.bottom  { position: absolute; bottom: 0; left: 45%; }
+.panel span.left    { position: absolute; left: 0;   top: 45%; }
+.panel span.right   { position: absolute; right: 0;  top: 45%; }*/
