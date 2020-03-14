@@ -8,18 +8,29 @@ class Reader {
 			console.error('no comicsPath given in options');
 			return;
 		}
-		if (!options.container) {
+		if (!options.container || options.container.length == 0) {
 			console.error('no container given in options');
 			return;
 		}
-
+		if (!options.imageURLs) {
+			console.error('no imageURLs given in options');
+			return;
+		}
+		
 		this.comicsPath = options.comicsPath;
 		this.bigimgsize = 1080;
 		
-		this.container = $('<div class="container"/>');
-		options.container.append(this.container);
+		this.imageURLs = options.imageURLs;
 		
-		this.container.css({ position: 'relative', width: '90%', height: '90%' });
+		// add image sub-container
+		this.container = $('<div class="container"/>');
+		this.container.css({
+			position: 'relative',
+			width: '90%',
+			height: '90%',
+			margin: 'auto',
+		});
+		options.container.append(this.container);
 		
 		try {
 			this.currpage = JSON.parse(localStorage.currpage);
@@ -40,8 +51,8 @@ class Reader {
 	
 	
 	
-	loadNextPage() { this.loadPage(this.currpage[this.comicsPath]+1); }
-	loadPrevPage() { this.loadPage(this.currpage[this.comicsPath]-1); }
+	loadNextPage() { return this.loadPage(this.currpage[this.comicsPath]+1); }
+	loadPrevPage() { return this.loadPage(this.currpage[this.comicsPath]-1); }
 	getCurrentPage() { return this.currpage[this.comicsPath]; }
 	getPages () {
 		return this.comic;
@@ -51,10 +62,10 @@ class Reader {
 		
 		// don't go to a page below 0, or above the number of pages in this comic
 		if (page == -1)
-			return;
+			return false;
 		if (this.comic && page == this.comic.length) {
 			this.currpage[this.comicsPath] = this.comic.length-1;
-			return;
+			return false;
 		}
 		
 		if (page === false)
@@ -65,20 +76,26 @@ class Reader {
 		
 		if (this.comic) {
 			this.kumikoReady();
-			return;
+			return true;
 		}
 		// else
-		$.get(this.comicsPath, function (comic) {
+		$.getJSON(this.comicsPath, function (comic) {
 			this.comic = comic;
 			this.kumikoReady();
 		}.bind(this));
+		
+		return true;
 	}
 	
-	kumikoReady () {
+	kumikoReady ()
+	{
+		$(document).trigger('kumiko-ready');
 		
 		var page = this.currpage[this.comicsPath];
 		var imginfo = this.comic[page];
-		var img = $('<img class="pageimg" src="'+imginfo['filename']+'"/>');
+		
+		var img = $('<img class="pageimg" src="'+this.imageURLs[page]+'"/>');
+		
 		img.css({
 			position: 'absolute',
 			'width': '100%',
@@ -166,17 +183,19 @@ class Reader {
 		$(window).scrollTop( $('#result').position().top )
 		
 		if (i < 0) {
-			this.dezoom();
 			this.currpanel = 'last';
-			this.loadPrevPage();
+			var prevpage = this.loadPrevPage();
+			if (!prevpage)
+				this.currpanel = 0;
 			return;
 		}
 		var newPanel = $('.panel').eq(i);
 		if (newPanel.length > 0)
 			this.zoomOn(newPanel);
 		else {
-			this.dezoom();
-			this.loadNextPage();
+			var nextpage = this.loadNextPage();
+			if (!nextpage)
+				this.currpanel--;
 		}
 	}
 	nextPanel () { this.currpanel++; this.gotoPanel(this.currpanel); }
