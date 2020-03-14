@@ -65,22 +65,10 @@ class Kumiko:
 		tmax = 255
 		ret,thresh = cv.threshold(gray,tmin,tmax,cv.THRESH_BINARY_INV)
 		
-		# OpenCV 3.2+
-		# See https://docs.opencv.org/master/d4/d73/tutorial_py_contours_begin.html
+		contours = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+		contours, hierarchy = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
 		
-		#im2, contours, hierarchy = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-		#cv.imwrite('tmp/contour.jpg',im2)
-		#cv.imwrite('tmp/hierarchy.jpg',hierarchy)
-		#print contours
-		
-		
-		# OpenCV 2.4
-		# https://docs.opencv.org/2.4/modules/imgproc/doc/structural_analysis_and_shape_descriptors.html
-		
-		contours, hierarchy = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-		
-		
-		# Get panels out of contours
+		# Get (square) panels out of contours
 		for contour in contours:
 			
 			arclength = cv.arcLength(contour,True)
