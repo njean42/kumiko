@@ -52,7 +52,7 @@ Read more in the [example Reader documentation](doc/Reader.md).
 
 # Requirements
 
-`apt-get install python-opencv` will install the only necessary library needed: *opencv* (2.x).
+`apt-get install python-opencv` will install the only necessary library needed: *opencv* (3.x).
 
 This should do the trick for Debian distros and derivatives (Ubuntu, Linux Mint...).
 If you successfully use *Kumiko* on any other platform, please let us know!
