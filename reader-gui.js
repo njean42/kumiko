@@ -50,26 +50,26 @@ $(document).delegate( '#result .nextPanel', 'click touch', function(event) {
 });
 
 $(document).keydown(function(e) {
-switch(e.which) {
-	case 37: // left
-	case 38: // up
-		$('#result .prevPanel').click();
-		break;
+	switch(e.which) {
+		case 37: // left
+		case 38: // up
+			$('#result .prevPanel').click();
+			break;
 
-	case 39: // right
-	case 40: // down
-		$('#result').click();
-		break;
-	
-	case 80: // 'p' key
-		$('input[name=panelview]').click();
-		break;
-	
-	default:
-		console.log(e.which);
-		return; // exit this handler for other keys
-}
-e.preventDefault(); // prevent the default action (scroll / move caret)
+		case 39: // right
+		case 40: // down
+			$('#result').click();
+			break;
+		
+		case 80: // 'p' key
+			$('input[name=panelview]').click();
+			break;
+		
+		default:
+			console.log(e.which);
+			return; // exit this handler for other keys
+	}
+	e.preventDefault(); // prevent the default action (scroll / move caret)
 });
 
 
