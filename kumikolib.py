@@ -125,7 +125,13 @@ class Kumiko:
                 
                 # Number infos['panels'] comics-wise (left to right for now)
                 self.gutterThreshold = sum(infos['size']) / 2 / 20
-                infos['panels'].sort(cmp=self.sort_panels)
+                try:
+                    infos['panels'].sort(cmp=self.sort_panels)
+                except TypeError as err:
+                    if sys.version_info.major == 3:
+                        infos['panels'].sort(key=cmp_to_key(self.sort_panels))
+                    else:
+                        raise err
                 
                 # write panel numbers on debug img
                 fontRatio = sum(infos['size']) / 2 / 400
