@@ -59,6 +59,8 @@ class Kumiko:
 			'panels': []
 		}
 		
+		self.gutterThreshold = sum(infos['size']) / 2 / 20
+		
 		gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
 		
 		tmin = 220
@@ -85,31 +87,24 @@ class Kumiko:
 			contourSize = int(sum(infos['size']) / 2 * 0.004)
 			cv.drawContours(img, [approx], 0, (0,0,255), contourSize)
 			
-			panel = [x,y,w,h]
+			panel = Panel([x,y,w,h], self.gutterThreshold)
 			infos['panels'].append(panel)
 		
 		if len(infos['panels']) == 0:
-			infos['panels'].append([0,0,infos['size'][0],infos['size'][1]]);
-		
-		for panel in infos['panels']:
-			x,y,w,h = panel
-			panel = {
-				'x': x,
-				'y': y,
-				'w': w,
-				'h': h
-			}
+			infos['panels'].append( Panel([0,0,infos['size'][0],infos['size'][1]], self.gutterThreshold) );
 		
 		# Number infos['panels'] comics-wise (left to right for now)
-		self.gutterThreshold = sum(infos['size']) / 2 / 20
-		infos['panels'].sort(cmp=self.sort_panels)
+		infos['panels'].sort()
+		
+		# Simplify panels back to lists (x,y,w,h)
+		infos['panels'] = list(map(lambda p: p.toarray(), infos['panels']))
 		
 		# write panel numbers on debug img
 		fontRatio = sum(infos['size']) / 2 / 400
 		font      = cv.FONT_HERSHEY_SIMPLEX
 		fontScale = 1 * fontRatio
 		fontColor = (0,0,255)
-		lineType  = 2
+		lineType  = 5
 		n = 0
 		for panel in infos['panels']:
 			n += 1
@@ -120,31 +115,45 @@ class Kumiko:
 			cv.imwrite(os.path.join('debug',os.path.basename(filename)+'-040-contours-numbers.jpg'),img)
 		
 		return infos
+
+
+class Panel:
+	def __init__(self, xywh, gutterThreshold):
+		[self.x, self.y, self.w, self.h] = xywh
+		self.b = self.y + self.h # panel's bottom
+		self.r = self.x + self.w # panel's right side
+		self.gutterThreshold = gutterThreshold
+	
+	def toarray(self):
+		return [self.x, self.y, self.w, self.h]
+	
+	def __eq__(self, other):
+		return self.x == other.x and self.y == other.y and self.w == other.w and self.h == other.h  # TODO: include gutterThreshold
+	
+	def __lt__(self, other):
+		# panel is above other
+		if other.y >= self.b - self.gutterThreshold and other.y >= self.y - self.gutterThreshold:
+			return True
 		
+		# panel is below other
+		if self.y >= other.b - self.gutterThreshold and self.y >= other.y - self.gutterThreshold:
+			return False
 		
-	def sort_panels (self,p1,p2):
-		[p1x,p1y,p1w,p1h] = p1
-		[p2x,p2y,p2w,p2h] = p2
+		# panel is left from other
+		if other.x >= self.r - self.gutterThreshold and other.x >= self.x - self.gutterThreshold:
+			return True
 		
-		p1b = p1y+p1h # p1's bottom
-		p2b = p2y+p2h # p2's bottom
-		p1r = p1x+p1w # p1's right side
-		p2r = p2x+p2w # p2's right side
+		# panel is right from other
+		if self.x >= other.r - self.gutterThreshold and self.x >= other.x - self.gutterThreshold:
+			return False
 		
-		# p1 is above p2
-		if p2y >= p1b - self.gutterThreshold and p2y >= p1y - self.gutterThreshold:
-			return -1
-		
-		# p1 is below p2
-		if p1y >= p2b - self.gutterThreshold and p1y >= p2y - self.gutterThreshold:
-			return 1
-		
-		# p1 is left from p2
-		if p2x >= p1r - self.gutterThreshold and p2x >= p1x - self.gutterThreshold:
-			return -1
-		
-		# p1 is right from p2
-		if p1x >= p2r - self.gutterThreshold and p1x >= p2x - self.gutterThreshold:
-			return 1
-		
-		return 0  # should we really fall into this case?
+		return True  # should not happen, TODO: raise an exception?
+	
+	def __le__(self, other):
+		return self.__lt__(other)
+	
+	def __gt__(self, other):
+		return not self.__lt__(other)
+	
+	def __ge__(self, other):
+		return self.__gt__(other)

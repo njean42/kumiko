@@ -13,7 +13,7 @@ parser.add_argument('-d', '--debug', action='store_true', help='Debug mode, crea
 
 # Input/Output
 parser.add_argument('-i', '--input', nargs=1, required=True, help='A file or folder name')
-parser.add_argument('-o', '--output', nargs=1, help='A file name to save out to')
+parser.add_argument('-o', '--output', nargs=1, help='A file name to save output to')
 
 
 args = parser.parse_args()
@@ -28,7 +28,7 @@ if os.path.isdir(file_or_folder):
 elif os.path.isfile(file_or_folder):
 	info = k.parse_images([file_or_folder])
 else:
-	print "--input (-i) is not a file or directory: '"+file_or_folder+"'"
+	print("--input (-i) is not a file or directory: '"+file_or_folder+"'")
 	sys.exit()
 
 info = json.dumps(info)
@@ -38,4 +38,4 @@ if args.output:
 	f.write(info)
 	f.close()
 
-print info
+print(info)
