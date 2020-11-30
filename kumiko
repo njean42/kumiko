@@ -9,16 +9,16 @@ from kumikolib import Kumiko
 parser = argparse.ArgumentParser(description='Kumiko CLI')
 
 # Utilities
-parser.add_argument('-d', '--debug', action='store_true', help='Debug mode, creates files with extra panel information and more')
+parser.add_argument('--debug-dir', nargs=1, help='Write debug files in this directory (image files with extra panel information and more)')
 
 # Input/Output
-parser.add_argument('-i', '--input', nargs=1, required=True, help='A file or folder name')
-parser.add_argument('-o', '--output', nargs=1, help='A file name to save output to')
+parser.add_argument('-i', '--input', nargs=1, required=True, help='A file or folder name to parse')
+parser.add_argument('-o', '--output', nargs=1, help='A file name to save json output to')
 
 
 args = parser.parse_args()
 k = Kumiko({
-	'debug': args.debug
+	'debug_dir': args.debug_dir[0] if args.debug_dir else False
 })
 
 file_or_folder = args.input[0]
@@ -37,5 +37,5 @@ if args.output:
 	f = open(args.output[0], 'w')
 	f.write(info)
 	f.close()
-
-print(info)
+else:
+	print(info)

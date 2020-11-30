@@ -14,16 +14,16 @@ class Kumiko:
 	
 	def __init__(self,options={}):
 		
-		if 'debug' in options:
-			self.options['debug'] = options['debug']
+		if 'debug_dir' in options:
+			self.options['debug_dir'] = options['debug_dir']
 		else:
-			self.options['debug'] = False
+			self.options['debug_dir'] = False
 		
 		if 'reldir' in options:
 			self.options['reldir'] = options['reldir']
 		else:
 			self.options['reldir'] = os.getcwd()
-	
+		
 	
 	def read_image(self,filename):
 		return cv.imread(filename)
@@ -99,7 +99,7 @@ class Kumiko:
 		# Simplify panels back to lists (x,y,w,h)
 		infos['panels'] = list(map(lambda p: p.toarray(), infos['panels']))
 		
-		# write panel numbers on debug img
+		# write panel numbers on debug image
 		fontRatio = sum(infos['size']) / 2 / 400
 		font      = cv.FONT_HERSHEY_SIMPLEX
 		fontScale = 1 * fontRatio
@@ -111,8 +111,8 @@ class Kumiko:
 			position  = ( int(panel[0]+panel[2]/2), int(panel[1]+panel[3]/2))
 			cv.putText(img,str(n),position,font,fontScale,fontColor,lineType)
 		
-		if (self.options['debug']):
-			cv.imwrite(os.path.join('debug',os.path.basename(filename)+'-040-contours-numbers.jpg'),img)
+		if (self.options['debug_dir']):
+			cv.imwrite(os.path.join(self.options['debug_dir'],os.path.basename(filename)+'-contours.jpg'),img)
 		
 		return infos
 
