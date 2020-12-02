@@ -61,9 +61,11 @@ If you successfully use *Kumiko* on any other platform, please let us know!
 
 
 
-# Usage
+# Usage & Testing
 
 See the [usage doc](doc/Usage.md) for details on how to use the *Kumiko* tools.
+
+Also check the [testing doc](doc/Testing.md) if you want to test modified version of the code.
 
 
 
