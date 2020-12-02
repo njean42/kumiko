@@ -14,16 +14,11 @@ class Kumiko:
 	
 	def __init__(self,options={}):
 		
-		if 'debug_dir' in options:
-			self.options['debug_dir'] = options['debug_dir']
-		else:
-			self.options['debug_dir'] = False
+		self.options['debug_dir'] = 'debug_dir' in options and options['debug_dir']
+		self.options['progress']  = 'progress'  in options and options['progress']
 		
-		if 'reldir' in options:
-			self.options['reldir'] = options['reldir']
-		else:
-			self.options['reldir'] = os.getcwd()
-		
+		self.options['reldir'] = options['reldir'] if 'reldir' in options else os.getcwd()
+	
 	
 	def read_image(self,filename):
 		return cv.imread(filename)
@@ -41,8 +36,17 @@ class Kumiko:
 	
 	def parse_images(self,filenames=[]):
 		infos = []
+		
+		if self.options['progress']:
+			print(len(filenames),'files')
+		
 		for filename in filenames:
+			
+			if self.options['progress']:
+				print("\t",filename)
+			
 			infos.append(self.parse_image(filename))
+		
 		return infos
 	
 	

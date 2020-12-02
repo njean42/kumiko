@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser(description='Kumiko CLI')
 
 # Utilities
 parser.add_argument('--debug-dir', nargs=1, help='Write debug files in this directory (image files with extra panel information and more)')
+parser.add_argument('--progress', action='store_true', help='Prints progress information')
 
 # Input/Output
 parser.add_argument('-i', '--input', nargs=1, required=True, help='A file or folder name to parse')
@@ -18,7 +19,8 @@ parser.add_argument('-o', '--output', nargs=1, help='A file name to save json ou
 
 args = parser.parse_args()
 k = Kumiko({
-	'debug_dir': args.debug_dir[0] if args.debug_dir else False
+	'debug_dir': args.debug_dir[0] if args.debug_dir else False,
+	'progress': args.progress
 })
 
 file_or_folder = args.input[0]
