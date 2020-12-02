@@ -4,8 +4,8 @@
 class Reader {
 	
 	constructor(options) {
-		if (!options.comicsPath) {
-			console.error('no comicsPath given in options');
+		if (!options.comicsPath && !options.comicsJson) {
+			console.error('no comicsPath or comicsJson given in options');
 			return;
 		}
 		if (!options.container || options.container.length == 0) {
@@ -17,8 +17,13 @@ class Reader {
 			return;
 		}
 		
-		this.comicsPath = options.comicsPath;
-		this.bigimgsize = 1080;
+		if (options.comicsJson)
+		{
+			this.comic = options.comicsJson;
+			this.comicsPath = 'local';
+		}
+		else
+			this.comicsPath = options.comicsPath;
 		
 		this.imageURLs = options.imageURLs;
 		
@@ -79,6 +84,13 @@ class Reader {
 			return true;
 		}
 		// else
+		if (this.comicsPath == 'local')
+		{
+			this.comic = json; // json should be defined in the html or by another script
+			this.kumikoReady();
+			return true;
+		}
+		// else
 		$.getJSON(this.comicsPath, function (comic) {
 			this.comic = comic;
 			this.kumikoReady();
@@ -95,7 +107,6 @@ class Reader {
 		var imginfo = this.comic[page];
 		
 		var img = $('<img class="pageimg" src="'+this.imageURLs[page]+'"/>');
-		
 		img.css({
 			position: 'absolute',
 			'width': '100%',
@@ -206,6 +217,7 @@ class Reader {
 		
 		var [imgw,imgh] = imginfo['size'];
 		
+		var i =1;
 		for (var p in imginfo['panels']) {
 			p = imginfo['panels'][p];
 			var [x,y,w,h] = p;
@@ -220,7 +232,7 @@ class Reader {
 			panel.css(panelcss);
 			
 			// uncomment the following line to have debug info on panels
-			panel.append('<span class="panelnb">'+($('.panel').length + 1)+'</span>');
+			panel.append('<span class="panelnb">'+(i++)+'</span>');
 			// 		panel.append('<span class="top">'+p.top);
 			// 		panel.append('<span class="bottom">'+p.bottom);
 			// 		panel.append('<span class="left">'+p.left);

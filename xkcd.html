@@ -3,12 +3,8 @@
 
 <head>
 	<meta charset="utf-8">
-	<meta http-equiv="Content-Security-Policy" content="img-src 'self'; script-src 'self' 'unsafe-inline'">
-	
 	<script type="text/javascript" src="jquery-3.2.1.min.js"></script>
-	
 	<link rel="stylesheet" media="all" href="style.css" />
-	
 	<style type="text/css">
 		#result {
 			width:  100%;
@@ -20,23 +16,12 @@
 <body>
 	
 	<div id="result">
-		<i class="tools prevPanel">←</i>
-	</div>
-	<div class="menu">
-		<div>
-			<label>
-				<input type="checkbox" name="panelview" checked="checked" />
-				Panel view (zoomed)
-			</label>
-		</div>
-		<div>
-			Go to page:
-			<select class="pagesel"></select>
-		</div>
 	</div>
 	
+	<script id="test" type="text/javascript" src="xkcd.js"></script>
 	<script type="text/javascript">
-		var json_file = 'xkcd.json';
+		var json = [{"panels": [[12, 37, 146, 101], [168, 1, 147, 191], [319, 1, 280, 191], [1, 202, 344, 192], [350, 202, 249, 192], [1, 404, 207, 202], [214, 404, 194, 202], [414, 404, 185, 202]], "size": [600, 607], "filename": "doc/regular_expressions.png"}];
+		var json_file = 'local';
 		var img_urls = ['doc/regular_expressions.png'];
 	</script>
 	<script type="text/javascript" src="reader.js"></script>
