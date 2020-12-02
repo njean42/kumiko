@@ -17,5 +17,3 @@ Use the left and right arrow keys or click-touch the screen to navigate through 
 ## Reader implementation details
 
 See the `reader.js` file for use in a browser or application webview.
-
-Some event bindings are defined in the `xkcd.html` file.

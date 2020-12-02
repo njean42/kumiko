@@ -76,8 +76,8 @@ The image order is alphabetical, which is based on a commonly encountered *page0
 
 ## Debug
 
-You can pass `kumiko` a `--debug` parameter that tells you are craving debugging information.
+You can pass `kumiko` a `--debug-dir /path/to/debug-info` parameter that tells you are craving debugging information.
 
-This will create an image for each page that Kumiko analysed, renamed `$filename-040-contours-numbers.jpg`.
-These files will be found in the `debug` subfolder (should exist and be writable).
+This will create an image for each page that Kumiko analysed, renamed `$filename-contours.jpg`.
+These files will be found in the `/path/to/debug-info` folder (should exist and be writable).
 Panel contours and image numbering is drawn onto every debugging image.
