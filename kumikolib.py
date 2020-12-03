@@ -19,7 +19,10 @@ class Kumiko:
 		self.options['progress']  = 'progress'  in options and options['progress']
 		
 		self.options['reldir'] = options['reldir'] if 'reldir' in options else os.getcwd()
-	
+		
+		self.options['min_panel_size_ratio'] = 1/15
+		if 'min_panel_size_ratio' in options and options['min_panel_size_ratio']:
+			self.options['min_panel_size_ratio'] = options['min_panel_size_ratio']
 	
 	def read_image(self,filename):
 		return cv.imread(filename)
@@ -149,7 +152,7 @@ class Kumiko:
 				x,y,w,h = cv.boundingRect(p)
 				
 				# exclude very small panels
-				if w < infos['size'][0]/15 or h < infos['size'][1]/15:
+				if w < infos['size'][0] * self.options['min_panel_size_ratio'] or h < infos['size'][1] * self.options['min_panel_size_ratio']:
 					continue
 				
 				contourSize = int(sum(infos['size']) / 2 * 0.004)

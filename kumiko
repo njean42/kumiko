@@ -16,11 +16,15 @@ parser.add_argument('--progress', action='store_true', help='Prints progress inf
 parser.add_argument('-i', '--input', nargs=1, required=True, help='A file or folder name to parse')
 parser.add_argument('-o', '--output', nargs=1, help='A file name to save json output to')
 
+# Configuration tweaks
+parser.add_argument('--min-panel-size-ratio', nargs=1, type=float, help='Panels will be considered too small and exluded if they have a width < img.width * ratio or height < img/height * ratio (default is 1/15th)')
+
 
 args = parser.parse_args()
 k = Kumiko({
 	'debug_dir': args.debug_dir[0] if args.debug_dir else False,
-	'progress': args.progress
+	'progress': args.progress,
+	'min_panel_size_ratio': args.min_panel_size_ratio[0] if args.min_panel_size_ratio else False
 })
 
 file_or_folder = args.input[0]
