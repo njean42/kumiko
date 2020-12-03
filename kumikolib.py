@@ -3,6 +3,7 @@
 
 
 import os
+import typing
 import cv2 as cv
 import numpy as np
 
@@ -10,10 +11,11 @@ import numpy as np
 
 class Kumiko:
 	
-	options = {}
 	img = False
 	
-	def __init__(self,options={}):
+        def __init__(self, options: typing.Optional[typing.Dict[str, typing.Any]]=None):
+                if options is None:
+                    options = {}
 		
 		self.options['debug_dir'] = 'debug_dir' in options and options['debug_dir']
 		self.options['progress']  = 'progress'  in options and options['progress']
@@ -38,7 +40,12 @@ class Kumiko:
 		return self.parse_images(filenames)
 	
 	
-	def parse_images(self,filenames=[]):
+        def parse_images(
+                        self, 
+                        filenames: typing.Optional[typing.List[str]]=None
+        ) -> typing.List[typing.Any]:
+                if filenames is None:
+                    filenames = []
 		infos = []
 		
 		if self.options['progress']:
