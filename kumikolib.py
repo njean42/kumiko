@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 
-
 import os
 import cv2 as cv
 import numpy as np
@@ -34,7 +33,6 @@ class Kumiko:
 			for filename in files:
 				filenames.append(os.path.join(root,filename))
 		filenames.sort()
-		#filenames = filenames[0:10]
 		return self.parse_images(filenames)
 	
 	
@@ -45,10 +43,8 @@ class Kumiko:
 			print(len(filenames),'files')
 		
 		for filename in filenames:
-			
 			if self.options['progress']:
 				print("\t",filename)
-			
 			infos.append(self.parse_image(filename))
 		
 		return infos
@@ -83,6 +79,11 @@ class Kumiko:
 		
 		poly1len = len(polygon) - best_cut[1] + best_cut[0]
 		poly2len = best_cut[1] - best_cut[0]
+		
+		# A panel should have at least three edges
+		if min(poly1len,poly2len) <= 2:
+			return [polygon]
+		
 		poly1 = np.zeros(shape=(poly1len,1,2), dtype=int)
 		poly2 = np.zeros(shape=(poly2len,1,2), dtype=int)
 		
@@ -155,8 +156,9 @@ class Kumiko:
 				if w < infos['size'][0] * self.options['min_panel_size_ratio'] or h < infos['size'][1] * self.options['min_panel_size_ratio']:
 					continue
 				
-				contourSize = int(sum(infos['size']) / 2 * 0.004)
-				cv.drawContours(img, [p], 0, (0,0,255), contourSize)
+				if self.options['debug_dir']:
+					contourSize = int(sum(infos['size']) / 2 * 0.004)
+					cv.drawContours(img, [p], 0, (0,0,255), contourSize)
 				
 				panel = Panel([x,y,w,h], self.gutterThreshold)
 				infos['panels'].append(panel)
@@ -174,17 +176,6 @@ class Kumiko:
 		infos['panels'] = list(map(lambda p: p.toarray(), infos['panels']))
 		
 		# write panel numbers on debug image
-		fontRatio = sum(infos['size']) / 2 / 400
-		font      = cv.FONT_HERSHEY_SIMPLEX
-		fontScale = 1 * fontRatio
-		fontColor = (0,0,255)
-		lineType  = 5
-		n = 0
-		for panel in infos['panels']:
-			n += 1
-			position  = ( int(panel[0]+panel[2]/2), int(panel[1]+panel[3]/2))
-			cv.putText(img,str(n),position,font,fontScale,fontColor,lineType)
-		
 		if (self.options['debug_dir']):
 			cv.imwrite(os.path.join(self.options['debug_dir'],os.path.basename(filename)+'-contours.jpg'),img)
 		
