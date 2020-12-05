@@ -13,7 +13,7 @@ body {
 
 /*****  CONTAINER & BUTTONS  *****/
 
-#result {
+.kumiko-reader {
 	z-index: 1;
 	height: 600px;
 	width:  600px;
@@ -55,19 +55,19 @@ input[name=panelview]:not(:checked) + span + span {
 	justify-content: center;
 	align-items: center;
 }
-#result.debug .container:not(.zoomed) .panel {
+.kumiko-reader.debug .container:not(.zoomed) .panel {
 	border: 2px solid red;
 	margin-left: -2px;
 	margin-top: -2px;
 }
-#result.debug .container:not(.zoomed) .panel:hover {
+.kumiko-reader.debug .container:not(.zoomed) .panel:hover {
 	background-color: rgba(52,152,219,0.5);
 }
-#result:not(.debug) .container .panel *,
-#result.debug .container.zoomed .panel * {
+.kumiko-reader:not(.debug) .container .panel *,
+.kumiko-reader.debug .container.zoomed .panel * {
 	display: none;
 }
-#result.debug .container:not(.zoomed) .panel span {
+.kumiko-reader.debug .container:not(.zoomed) .panel span {
 	color: white;
 	font-size: 75%;
 	background-color: black;
@@ -75,7 +75,7 @@ input[name=panelview]:not(:checked) + span + span {
 	border-radius: 30px;
 	padding: 2px 6px;
 }
-#result.debug .container:not(.zoomed) .panel span.panelnb { font-size: 150%; }
+.kumiko-reader.debug .container:not(.zoomed) .panel span.panelnb { font-size: 150%; }
 /*.panel span.top     { position: absolute; top: 0;    left: 45%; }
 .panel span.bottom  { position: absolute; bottom: 0; left: 45%; }
 .panel span.left    { position: absolute; left: 0;   top: 45%; }

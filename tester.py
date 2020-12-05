@@ -22,6 +22,13 @@ class Tester:
 		self.options = {
 			'browser': options['browser'] if 'browser' in options and options['browser'] else False
 		}
+		
+		# Test all files in tests/images/$folder/
+		if len(self.files) == 0:
+			for d in os.scandir('tests/images'):
+				 if d.is_dir():
+					 self.files.append(d)
+			self.files.sort(key=lambda d: d.name)
 	
 	
 	def run_all(self):
@@ -41,12 +48,6 @@ class Tester:
 			kumiko_bin = os.path.join(tempgit,'kumiko')
 		
 		subprocess.run(['mkdir','-p',self.savedir])
-		
-		if len(self.files) == 0:
-			for d in os.scandir('tests/images'):
-				 if d.is_dir():
-					 self.files.append(d)
-			self.files.sort(key=lambda d: d.name)
 		
 		for f in self.files:
 			print("##### Kumiko-cutting",f.name,"#####")
@@ -95,8 +96,8 @@ class Tester:
 					else:
 						gutterThreshold = Kumiko.getGutterThreshold(json1[p]['size'])
 						for pan in range(len(json1[p]['panels'])):
-							p1 = Panel(json1[p]['panels'][pan], gutterThreshold)
-							p2 = Panel(json2[p]['panels'][pan], gutterThreshold)
+							p1 = Panel(json1[p]['panels'][pan], gutterThreshold/2)
+							p2 = Panel(json2[p]['panels'][pan], gutterThreshold/2)
 							if p1 != p2:
 								is_diff = True
 								break
@@ -151,7 +152,7 @@ class HTML:
 	panelId = 0
 	def side_by_side_panels(img,jsons,v1,v2):
 		oneside = """
-			<div id="page{0}" class="kumiko-reader"></div>
+			<div id="page{0}" class="kumiko-reader debug"></div>
 			<script type="text/javascript">
 				var reader = new Reader({{
 					container: $('#page{1}'),
