@@ -12,10 +12,12 @@ class Reader {
 			console.error('no container given in options');
 			return;
 		}
-		if (!options.imageURLs) {
-			console.error('no imageURLs given in options');
+		
+		if (!options.images_dir) {
+			console.error('no images_dir given in options');
 			return;
 		}
+		this.images_dir = options.images_dir
 		
 		if (options.comicsJson)
 		{
@@ -24,8 +26,6 @@ class Reader {
 		}
 		else
 			this.comicsPath = options.comicsPath;
-		
-		this.imageURLs = options.imageURLs;
 		
 		// add image sub-container
 		this.container = $('<div class="container"/>');
@@ -105,8 +105,9 @@ class Reader {
 		
 		var page = this.currpage[this.comicsPath];
 		var imginfo = this.comic[page];
+		var imgurl = this.images_dir + imginfo.filename.split('/').reverse()[0];
 		
-		var img = $('<img class="pageimg" src="'+this.imageURLs[page]+'"/>');
+		var img = $('<img class="pageimg" src="'+imgurl+'"/>');
 		img.css({
 			position: 'absolute',
 			'width': '100%',
