@@ -50,7 +50,7 @@ class Tester:
 		subprocess.run(['mkdir','-p',self.savedir])
 		
 		for f in self.files:
-			print("##### Kumiko-cutting",f.name,"#####")
+			print("##### Kumiko-cutting",f if isinstance(f,str) else f.name,"#####")
 			
 			f_savedir = os.path.join(self.savedir,git_version,os.path.basename(f))
 			subprocess.run(['mkdir','-p',f_savedir])
