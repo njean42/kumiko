@@ -4,7 +4,7 @@
 
 ![Kumiko mascot by Cthulhulumaid](artwork/kumiko-big.png "Kumiko mascot by Cthulhulumaid")
 
-> Kumiko mascot by Cthulhulumaid, [CC-BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/ "Creative Commons License")
+> Kumiko mascot by [Hurluberlue](https://www.twitch.tv/hurluberlue "twitch link"), [CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/ "Creative Commons License")
 
 *Kumiko, the Comics Cutter* is a set of tools to compute useful information about comic book pages, panels, and more.
 Its main strength is to find out the **locations of panels** within a comic's page (image file).
@@ -65,7 +65,7 @@ If you successfully use *Kumiko* on any other platform, please let us know!
 
 See the [usage doc](doc/Usage.md) for details on how to use the *Kumiko* tools.
 
-Also check the [testing doc](doc/Testing.md) if you want to test modified version of the code.
+Also check the [testing doc](doc/Testing.md) if you want to test modified versions of the code.
 
 
 
