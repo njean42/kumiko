@@ -193,7 +193,7 @@ class Panel:
 		return [self.x, self.y, self.w, self.h]
 	
 	def __eq__(self, other):
-		return abs(self.x-other.x) < self.gutterThreshold and abs(self.y == other.y) < self.gutterThreshold and abs(self.r == other.r) < self.gutterThreshold and abs(self.b == other.b) < self.gutterThreshold
+		return abs(self.x-other.x) < self.gutterThreshold and abs(self.y-other.y) < self.gutterThreshold and abs(self.r-other.r) < self.gutterThreshold and abs(self.b-other.b) < self.gutterThreshold
 	
 	def __lt__(self, other):
 		# panel is above other
