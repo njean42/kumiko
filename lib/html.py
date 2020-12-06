@@ -11,6 +11,7 @@ class HTML:
 <head>
 	<meta charset="utf-8">
 	<script type="text/javascript" src="{reldir}jquery-3.2.1.min.js"></script>
+	<script type="text/javascript" src="{reldir}jquery.touchSwipe.min.js"></script>
 	<script type="text/javascript" src="{reldir}reader.js"></script>
 	<link rel="stylesheet" media="all" href="{reldir}style.css" />
 	<style type="text/css">
@@ -56,9 +57,10 @@ class HTML:
 		return html
 	
 	
-	def reader(js,images_dir):
+	def reader(js,images_dir,debug):
+		debug = 'debug' if debug else ''
 		return """
-			<div id="reader" class="kumiko-reader debug fullpage"></div>
+			<div id="reader" class="kumiko-reader {debug} fullpage"></div>
 			<script type="text/javascript">
 				var reader = new Reader({{
 					container: $('#reader'),
@@ -67,7 +69,7 @@ class HTML:
 				}});
 				reader.loadPage(0);
 			</script>
-			""".format(json=js,images_dir=images_dir)
+			""".format(json=js,images_dir=images_dir,debug=debug)
 	
 	
 	footer = """

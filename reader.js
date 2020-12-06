@@ -10,6 +10,8 @@ class Reader {
 			console.error('no container given in options');
 			return;
 		}
+		this.gui = options.container;
+		this.gui.data('reader',this);
 		
 		if (!options.images_dir) {
 			console.error('no images_dir given in options');
@@ -23,6 +25,11 @@ class Reader {
 		}
 		this.comic = options.comicsJson;
 		
+		// init attributes
+		this.currpage = 0;
+		this.currpanel = 0;
+		this.debug = this.gui.hasClass('debug');
+		
 		// add image sub-container
 		this.container = $('<div class="container"/>');
 		this.container.css({
@@ -31,16 +38,29 @@ class Reader {
 			height: '95%',
 			margin: 'auto',
 		});
-		options.container.append(this.container);
+		this.gui.append(this.container);
 		
-		this.currpage = 0;
-		this.currpanel = 0;
+		this.add_controls();
 		
 		window.addEventListener('orientationchange', function () {
 			setTimeout( function () { this.gotoPanel(this.currpanel); }.bind(this), 500);  // slight delay to make it work better, not sure why :)
 		}.bind(this));
 	}
 	
+	next()
+	{
+		if (this.container.is('.zoomed'))
+			this.nextPanel();
+		else
+			this.loadNextPage();
+	}
+	prev()
+	{
+		if (this.container.is('.zoomed'))
+			this.prevPanel();
+		else
+			this.loadPrevPage();
+	}
 	
 	loadNextPage() { return this.loadPage(this.currpage+1); }
 	loadPrevPage() { return this.loadPage(this.currpage-1); }
@@ -48,10 +68,11 @@ class Reader {
 	{
 		// don't go to a page below 0, or above the number of pages in this comic
 		if (page < 0 || page >= this.comic.length)
-		{
-			console.error('Willing to go to page',page,'but is does not exist');
 			return false;
-		}
+		
+		this.currpage = page;
+		
+		$('.pagenb',this.gui).html('page '+(page+1)+' <small>/'+this.comic.length+'</small>')
 		
 		var imginfo = this.comic[page];
 		var imgurl = this.images_dir + imginfo.filename.split('/').reverse()[0];
@@ -66,6 +87,8 @@ class Reader {
 		this.container.children('img').remove();
 		this.container.prepend(img);
 		
+		var was_zoomed = this.container.is('.zoomed');
+		
 		this.drawPanels(imginfo);
 		this.dezoom();
 		
@@ -74,11 +97,15 @@ class Reader {
 		else
 			this.currpanel = 0;
 		
-		if ($('input[name=panelview]').is(':checked'))
+		if (was_zoomed)
 			this.gotoPanel(this.currpanel);
+		
+		this.showMenu(false);
+		this.gui.children('.pagenb').stop().fadeIn(500, function () { $(this).fadeOut(3000); });
+		return true;
 	}
 	
-	zoomOn (panel,callback)
+	zoomOn (panel)
 	{
 		var growth = this.container.parent().width() / panel.width();
 		var max = 'x';
@@ -106,10 +133,11 @@ class Reader {
 		panel.addClass('zoomTarget');
 		
 		this.container.addClass('zoomed');
-		this.container.animate(newcss,300,callback);
+		this.container.animate(newcss,300);
 	}
 	
-	dezoom () {
+	dezoom ()
+	{
 		var size = this.getImgSize();
 		
 		var newcss = {
@@ -122,7 +150,8 @@ class Reader {
 		this.container.css(newcss);
 	}
 	
-	getImgSize () {
+	getImgSize ()
+	{
 		var size = {
 			w: this.container.parent().width(),
 			h: this.container.parent().height()
@@ -138,9 +167,8 @@ class Reader {
 		return size;
 	}
 	
-	gotoPanel (i) {
-		$(window).scrollTop( $('#result').position().top )
-		
+	gotoPanel (i)
+	{
 		if (i < 0) {
 			this.currpanel = 'last';
 			var prevpage = this.loadPrevPage();
@@ -156,6 +184,7 @@ class Reader {
 			if (!nextpage)
 				this.currpanel--;
 		}
+		this.showMenu(false);
 	}
 	nextPanel () { this.currpanel++; this.gotoPanel(this.currpanel); }
 	prevPanel () { this.currpanel--; this.gotoPanel(this.currpanel); }
@@ -191,4 +220,114 @@ class Reader {
 		}
 	}
 	
+	add_controls()
+	{
+		// add controls and page info
+		this.gui.append('<span class="pagenb"/>');
+		var menu = $('<div class="menu"/>');
+		var menuul = $('<ul/>');
+		menuul.append('<li><label><input type="radio" name="viewmode" value="page"  autocomplete="off" />read page by page</label></li>');
+		menuul.append('<li><label><input type="radio" name="viewmode" value="panel" autocomplete="off" />read panel by panel</label></li>');
+		menu.append(menuul);
+		this.gui.append(menu);
+		this.showMenu(false);
+		
+		if (this.debug)
+			$('input[name=viewmode][value=page]',  this.gui).prop('checked',true);
+		else
+			$('input[name=viewmode][value=panel]', this.gui).prop('checked',true);
+	}
+	
+	showMenu(show=true)
+	{
+		if (show)
+			this.gui.children('.menu').show();
+		else
+			this.gui.children('.menu').hide();
+	}
+	toggleMenu()
+	{
+		this.showMenu(!this.gui.children('.menu').is(':visible'));
+	}
 }
+
+
+// Change view mode
+$(document).delegate( 'input[name=viewmode]', 'change', function () {
+	if (!$(this).is(':checked'))
+		return;
+	
+	var reader = $(this).parents('.kumiko-reader:eq(0)').data('reader');
+	switch ($(this).val()) {
+		case 'page':
+			reader.dezoom();
+			break;
+		case 'panel':
+			reader.gotoPanel(0);
+			break;
+	}
+	reader.container.focus();
+});
+
+// Next panel on simple click
+$(document).delegate( '.kumiko-reader', 'click touch', function (e) {
+	$(this).data('reader').next();
+});
+
+// Show menu on double click
+$(document).delegate( '.kumiko-reader', 'dblclick', function (e) {
+	$(this).data('reader').showMenu();
+});
+
+
+/**** KEYBOARD NAVIGATION ****/
+
+$(document).keydown(function(e) {
+	switch(e.which) {
+		case 37: // left
+			reader.prev();
+			break;
+			
+		case 39: // right
+			reader.next();
+			break;
+		
+		case 80: // 'p' key: switch between page and panel reading
+			$('input[name=viewmode]:not(:checked)').prop('checked',true).change();
+			break;
+		
+		case 77: // 'm' key: show/hide menu
+			reader.toggleMenu();
+			break;
+		
+		default:
+			return; // exit this handler for other keys
+	}
+	e.preventDefault();
+});
+
+
+/**** MOBILE NAVIGATION ****/
+
+// Navigate on swipe left/right, show menu on tap hold
+$(function() {
+	$('.kumiko-reader').swipe({
+		swipe: function(event, direction, distance, duration, fingerCount, fingerData)
+		{
+			switch (direction)
+			{
+				case 'left':
+					$(this).data('reader').prev();
+					break;
+				case 'right':
+					$(this).data('reader').next();
+					break;
+			}
+		},
+		hold: function(event, target)
+		{
+			$(this).data('reader').showMenu();
+		}
+	});
+	$('body').swipe( {fingers:2} );
+});

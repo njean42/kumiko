@@ -7,11 +7,15 @@ body {
 	margin-top: 2vh;
 	margin-left: 2vw;
 }
-.hidden {
-	display: none;
+
+ul {
+	padding: 0;
+	margin: 0;
+	list-style: none;
 }
 
-/*****  CONTAINER & BUTTONS  *****/
+
+/*****  CONTAINERS & BUTTONS  *****/
 
 .kumiko-reader {
 	z-index: 1;
@@ -21,32 +25,30 @@ body {
 	border: 1px dotted blue;
 	padding: 1px; /* make sure to see panel borders even for pages with no margin (e.g. xkcd) */
 	overflow: hidden;
+	position: relative;
 }
-.tools {
-	opacity: 0.5;
+
+.kumiko-reader > *:not(.container) {
+	z-index: 20;
+	padding: 0.3em 0.5em;
+	background-color: #34495e;
+	opacity: 0.9;
 	color: #ecf0f1;
-	background-color: #2c3e50;
-	padding: 5px;
-	border-radius: 5px;
-	/*width: 12vmin;
-	height: 20vmin;*/
-	
-	font-size: 8vmin;
+	font-weight: bold;
+}
+
+.menu {
 	position: absolute;
-	z-index: 90;
-	line-height: 8vmin;
+	bottom: 0;
+	left: 0;
 }
-.panelpages input {
-	display: none;
+
+.pagenb {
+	position: absolute;
+	bottom: 0;
+	right: 0;
 }
-input[name=panelview]:checked + span {
-	width: 1em;
-	height: 1em;
-}
-input[name=panelview]:checked + span,
-input[name=panelview]:not(:checked) + span + span {
-	background-color: #9b59b6;
-}
+
 
 /*****  PANELS  *****/
 .panel {
