@@ -16,10 +16,11 @@ parser.add_argument('--progress', action='store_true', help='Prints progress inf
 parser.add_argument('-i', '--input', nargs=1, required=True, help='A file or folder name to parse')
 parser.add_argument('-o', '--output', nargs=1, help='A file name to save json output to')
 
+parser.add_argument('-b', '--browser', nargs=1, help='Opens given browser to view the result when ready (implies --html)', choices=['firefox','konqueror','chromium'])
+parser.add_argument('--html', action='store_true', help='Generates an HTML file showing the result')
+
 # Configuration tweaks
 parser.add_argument('--min-panel-size-ratio', nargs=1, type=float, help='Panels will be considered too small and exluded if they have a width < img.width * ratio or height < img/height * ratio (default is 1/15th)')
-
-parser.add_argument('-b', '--browser', nargs=1, help='Opens given browser to view the result when ready', choices=['firefox','konqueror','chromium'])
 
 
 
@@ -53,12 +54,14 @@ else:
 
 
 # generate html file for viewing the result
-html_file = os.path.join('tests/results',os.path.basename(file_or_folder)+'.html')
-fh = open(html_file, 'w')
-fh.write(HTML.header(reldir='../../'))
-fh.write(HTML.reader(info,os.path.relpath(folder,'tests/results')+'/'))
-fh.write(HTML.footer)
-fh.close()
+if args.html or args.browser:
+	print('Generating HTML file')
+	html_file = os.path.join('tests/results',os.path.basename(file_or_folder)+'.html')
+	fh = open(html_file, 'w')
+	fh.write(HTML.header(reldir='../../'))
+	fh.write(HTML.reader(info,os.path.relpath(folder,'tests/results')+'/'))
+	fh.write(HTML.footer)
+	fh.close()
 
 
 if args.browser:
