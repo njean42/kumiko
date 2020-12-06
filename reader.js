@@ -232,10 +232,11 @@ class Reader {
 		this.gui.append(menu);
 		this.showMenu(false);
 		
-		if (this.debug)
-			$('input[name=viewmode][value=page]',  this.gui).prop('checked',true);
-		else
-			$('input[name=viewmode][value=panel]', this.gui).prop('checked',true);
+		var _reader = this;
+		$(document).ready( function () {
+			var mode = _reader.debug ? 'page' : 'panel';
+			$('input[name=viewmode][value='+mode+']',  _reader.gui).prop('checked',true).change();
+		});
 	}
 	
 	showMenu(show=true)
@@ -329,5 +330,5 @@ $(function() {
 			$(this).data('reader').showMenu();
 		}
 	});
-	$('body').swipe( {fingers:2} );
+	$('.kumiko-reader').swipe( {fingers:2} );
 });
