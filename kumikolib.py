@@ -128,7 +128,7 @@ class Kumiko:
 				elif panels[j].contains(panels[i]):
 					panels_to_remove.append(i)
 		
-		for i in reversed(panels_to_remove):
+		for i in reversed(sorted(list(set(panels_to_remove)))):
 			del panels[i]
 	
 	
