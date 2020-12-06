@@ -64,10 +64,7 @@ class HTML:
 			ol += '<li>' + str(Panel(p,0)) + '</li>'
 		ol += '</ol>'
 		return """
-			<div style="display: flex;">
-				<div id="reader" class="kumiko-reader debug"></div>
-				{ol}
-			</div>
+			<div id="reader" class="kumiko-reader debug fullpage"></div>
 			<script type="text/javascript">
 				var reader = new Reader({{
 					container: $('#reader'),
@@ -76,6 +73,7 @@ class HTML:
 				}});
 				reader.loadPage(0);
 			</script>
+			{ol}
 			""".format(json=js,images_dir=images_dir,ol=ol)
 	
 	

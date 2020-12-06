@@ -89,24 +89,22 @@ class Panel:
 	
 	
 	def find_top_panel(self,panels):
-		all_top = list(filter(lambda p: p.y < self.y and p.same_col(self), panels))
+		all_top = list(filter(lambda p: p.b <= self.y and p.same_col(self), panels))
 		return max(all_top, key=lambda p: p.b) if all_top else None
 	
 	
 	def find_left_panel(self,panels):
-		all_left = list(filter(lambda p: p.x < self.x and p.same_row(self), panels))
-		if self.x == 981:
-			print('panel5.neighbour',list(map(lambda p: str(p),all_left)))
+		all_left = list(filter(lambda p: p.r <= self.x and p.same_row(self), panels))
 		return max(all_left, key=lambda p: p.r) if all_left else None
 	
 	
 	def find_bottom_panel(self,panels):
-		all_bottom = list(filter(lambda p: p.y > self.y and p.same_col(self), panels))
+		all_bottom = list(filter(lambda p: p.y >= self.b and p.same_col(self), panels))
 		return min(all_bottom, key=lambda p: p.y) if all_bottom else None
 	
 	
 	def find_right_panel(self,panels):
-		all_right = list(filter(lambda p: p.x > self.x and p.same_row(self), panels))
+		all_right = list(filter(lambda p: p.x >= self.r and p.same_row(self), panels))
 		return min(all_right, key=lambda p: p.x) if all_right else None
 	
 	

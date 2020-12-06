@@ -19,6 +19,7 @@ body {
 	width:  600px;
 	cursor: pointer;
 	border: 1px dotted blue;
+	padding: 1px; /* make sure to see panel borders even for pages with no margin (e.g. xkcd) */
 	overflow: hidden;
 }
 .tools {

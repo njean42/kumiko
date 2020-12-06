@@ -154,13 +154,14 @@ class Kumiko:
 		}
 	
 	
-	# Expand panels to their edges or page frame
+	# Expand panels to their neighbour's edge, or page frame
 	def expand_panels(self, panels):
 		gutters = Kumiko.actual_gutters(panels)
 		for i in range(len(panels)):
 			for d in ['x','y','r','b']: # expand in all four directions
 				pcoords = {'x':panels[i].x, 'y':panels[i].y, 'r':panels[i].r, 'b':panels[i].b}
 				
+				newcoord = -1
 				neighbour = panels[i].find_neighbour_panel(d,panels)
 				if neighbour:
 					# expand to that neighbour's edge (minus gutter)
@@ -170,9 +171,9 @@ class Kumiko:
 					min_panel = min(panels,key=lambda p: getattr(p,d)) if d in ['x','y'] else max(panels,key=lambda p: getattr(p,d))
 					newcoord = getattr(min_panel,d)
 				
-				if d in ['r','b'] and newcoord > pcoords[d] or d in ['x','y'] and newcoord < pcoords[d]:
-					pcoords[d] = newcoord
-					panels[i] = Panel([pcoords['x'], pcoords['y'], pcoords['r']-pcoords['x'], pcoords['b']-pcoords['y']], self.gutterThreshold)
+				if newcoord != -1:
+					if d in ['r','b'] and newcoord > getattr(panels[i],d) or d in ['x','y'] and newcoord < getattr(panels[i],d):
+						setattr(panels[i],d,newcoord)
 	
 	
 	def getGutterThreshold(size):
