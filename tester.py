@@ -12,8 +12,7 @@ class Tester:
 	files = []
 	git_repo = 'https://framagit.org/nicooo/kumiko'
 	git_versions = [
-		#'v1.0',
-		#'v1.1',
+		# 'v1.0', 'v1.1',
 		'v1.11',
 		'current',
 	]
@@ -24,7 +23,8 @@ class Tester:
 			raise Exception("'%s' is not a directory" % self.savedir)
 		
 		self.options = {
-			'browser': options['browser'] if 'browser' in options and options['browser'] else False
+			'browser': options['browser'] if 'browser' in options and options['browser'] else False,
+			'html': options['html'] if 'html' in options else False
 		}
 		
 		# Test all files in tests/images/$folder/
@@ -50,8 +50,6 @@ class Tester:
 			subprocess.run(['git', 'clone', self.git_repo, tempgit], capture_output=True)
 			subprocess.run(['git', 'checkout', git_version], cwd=tempgit, capture_output=True)
 			kumiko_bin = os.path.join(tempgit,'kumiko')
-		
-		subprocess.run(['mkdir','-p',self.savedir])
 		
 		for f in self.files:
 			print("##### Kumiko-cutting",f if isinstance(f,str) else f.name,"#####")
@@ -115,11 +113,17 @@ class Tester:
 							'images_dir': images_dir
 						}
 			
+			print('Found',len(files_diff),'differences')
+			
+			if not self.options['html']:
+				return
+			
+			print('Generating HTML diff file')
+			
 			html_diff_file = os.path.join(self.savedir,'diff-'+v1+'-'+v2+'.html')
 			diff_file = open(html_diff_file, 'w')
 			diff_file.write(HTML.header('Comparing Kumiko results','../../'))
 			
-			print('Found',len(files_diff),'differences')
 			diff_file.write(HTML.nbdiffs(files_diff))
 			
 			for img in files_diff:
@@ -135,12 +139,15 @@ class Tester:
 
 parser = argparse.ArgumentParser(description='Kumiko Tester')
 
-parser.add_argument('-b', '--browser', nargs=1, help='Opens given browser to view the differences when ready', choices=['firefox','konqueror','chromium'])
 parser.add_argument('action', nargs='?', help="Just 'run' (compute information about files), 'compare' two versions of the code, or both", choices=['run','compare','run_compare'], default='run_compare')
+
+parser.add_argument('-b', '--browser', nargs=1, help='Opens given browser to view the differences when ready (implies --html)', choices=['firefox','konqueror','chromium'])
+parser.add_argument('--html', action='store_true', help='Generates an HTML file showing the differences between code versions')
 
 args = parser.parse_args()
 
 tester = Tester({
+	'html': args.html or args.browser,
 	'browser': args.browser[0] if args.browser != None else False,
 })
 
