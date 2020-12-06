@@ -45,9 +45,7 @@ You read a page, possibly zooming on it to be able to read speech bubbles, then 
 With knowledge about panels locations, we can imagine a comic reader that also offers *panel-by-panel reading*.
 This is especially interesting for **small screens**, on which you probably can't read the texts if a whole page is displayed.
 
-We provide an example implementation of such a reader application.
-Read more in the [example Reader documentation](doc/Reader.md).
-
+Just run `kumiko -i /path/to/comicpage.jpg -b firefox` on your *comicpage.jpg* file, and read it panel-by-panel in your browser!
 
 
 # Requirements

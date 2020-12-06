@@ -11,6 +11,8 @@ More detailed help can be found by running `kumiko --help`.
 
 	kumiko -i /path/to/comicbook/page001.jpg
 
+(Add `--html-debug -b firefox` to view the panels, on top of given image, in your browser!)
+
 The result would look like the following:
 
 	[
@@ -47,6 +49,8 @@ The `filename`s in our JSON object are relative to the working directory from wh
 ## Get panel information for all pages in one comic book
 
 	kumiko -i /path/to/comicbook/
+
+(Add `--html-debug -b firefox` to view the panels for all pages, on top your images, in your browser!)
 
 The result of such a command would be a JSON-formatted array of all images in the folder:
 
