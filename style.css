@@ -78,7 +78,9 @@ input[name=panelview]:not(:checked) + span + span {
 	padding: 2px 6px;
 }
 .kumiko-reader.debug .container:not(.zoomed) .panel span.panelnb { font-size: 150%; }
-/*.panel span.top     { position: absolute; top: 0;    left: 45%; }
-.panel span.bottom  { position: absolute; bottom: 0; left: 45%; }
-.panel span.left    { position: absolute; left: 0;   top: 45%; }
-.panel span.right   { position: absolute; right: 0;  top: 45%; }*/
+
+/* Debug show panel edges */
+.kumiko-reader.debug .container:not(.zoomed) .panel span.top     { position: absolute; top: 0;    left: 45%; }
+.kumiko-reader.debug .container:not(.zoomed) .panel span.bottom  { position: absolute; bottom: 0; left: 45%; }
+.kumiko-reader.debug .container:not(.zoomed) .panel span.left    { position: absolute; left: 0;   top: 45%; }
+.kumiko-reader.debug .container:not(.zoomed) .panel span.right   { position: absolute; right: 0;  top: 45%; }

@@ -1,6 +1,5 @@
 
 
-import json
 from lib.panel import Panel
 
 
@@ -58,11 +57,6 @@ class HTML:
 	
 	
 	def reader(js,images_dir):
-		page = json.loads(js)
-		ol = '<ol>'
-		for p in page[0]['panels']:
-			ol += '<li>' + str(Panel(p,0)) + '</li>'
-		ol += '</ol>'
 		return """
 			<div id="reader" class="kumiko-reader debug fullpage"></div>
 			<script type="text/javascript">
@@ -73,8 +67,7 @@ class HTML:
 				}});
 				reader.loadPage(0);
 			</script>
-			{ol}
-			""".format(json=js,images_dir=images_dir,ol=ol)
+			""".format(json=js,images_dir=images_dir)
 	
 	
 	footer = """

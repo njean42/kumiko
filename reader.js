@@ -3,11 +3,9 @@
 
 class Reader {
 	
-	constructor(options) {
-		if (!options.comicsPath && !options.comicsJson) {
-			console.error('no comicsPath or comicsJson given in options');
-			return;
-		}
+	constructor(options)
+	{
+		// Mandatory options
 		if (!options.container || options.container.length == 0) {
 			console.error('no container given in options');
 			return;
@@ -19,34 +17,23 @@ class Reader {
 		}
 		this.images_dir = options.images_dir
 		
-		if (options.comicsJson)
-		{
-			this.comic = options.comicsJson;
-			this.comicsPath = 'local';
+		if (!options.comicsJson || typeof options.comicsJson != 'object') {
+			console.error('no comicsJson given in options, or not a javascript object');
+			return;
 		}
-		else
-			this.comicsPath = options.comicsPath;
+		this.comic = options.comicsJson;
 		
 		// add image sub-container
 		this.container = $('<div class="container"/>');
 		this.container.css({
 			position: 'relative',
-			width: '90%',
-			height: '90%',
+			width: '95%',
+			height: '95%',
 			margin: 'auto',
 		});
 		options.container.append(this.container);
 		
-		try {
-			this.currpage = JSON.parse(localStorage.currpage);
-		} catch (e) {
-			this.currpage = {};
-		}
-		
-		if (!this.currpage[this.comicsPath])
-			this.currpage[this.comicsPath] = 0;
-		
-		this.nbDigits = options.nbDigits ? options.nbDigits : 1;
+		this.currpage = 0;
 		this.currpanel = 0;
 		
 		window.addEventListener('orientationchange', function () {
@@ -55,55 +42,17 @@ class Reader {
 	}
 	
 	
-	
-	loadNextPage() { return this.loadPage(this.currpage[this.comicsPath]+1); }
-	loadPrevPage() { return this.loadPage(this.currpage[this.comicsPath]-1); }
-	getCurrentPage() { return this.currpage[this.comicsPath]; }
-	getPages () {
-		return this.comic;
-	}
-	
-	loadPage(page=false) {
-		
-		// don't go to a page below 0, or above the number of pages in this comic
-		if (page == -1)
-			return false;
-		if (this.comic && page == this.comic.length) {
-			this.currpage[this.comicsPath] = this.comic.length-1;
-			return false;
-		}
-		
-		if (page === false)
-			page = (this.comicsPath in this.currpage) ? this.currpage[this.comicsPath] : 0;
-		
-		this.currpage[this.comicsPath] = page;
-		localStorage.currpage = JSON.stringify(this.currpage);
-		
-		if (this.comic) {
-			this.kumikoReady();
-			return true;
-		}
-		// else
-		if (this.comicsPath == 'local')
-		{
-			this.comic = json; // json should be defined in the html or by another script
-			this.kumikoReady();
-			return true;
-		}
-		// else
-		$.getJSON(this.comicsPath, function (comic) {
-			this.comic = comic;
-			this.kumikoReady();
-		}.bind(this));
-		
-		return true;
-	}
-	
-	kumikoReady ()
+	loadNextPage() { return this.loadPage(this.currpage+1); }
+	loadPrevPage() { return this.loadPage(this.currpage-1); }
+	loadPage(page=0)
 	{
-		$(document).trigger('kumiko-ready');
+		// don't go to a page below 0, or above the number of pages in this comic
+		if (page < 0 || page >= this.comic.length)
+		{
+			console.error('Willing to go to page',page,'but is does not exist');
+			return false;
+		}
 		
-		var page = this.currpage[this.comicsPath];
 		var imginfo = this.comic[page];
 		var imgurl = this.images_dir + imginfo.filename.split('/').reverse()[0];
 		
@@ -127,12 +76,10 @@ class Reader {
 		
 		if ($('input[name=panelview]').is(':checked'))
 			this.gotoPanel(this.currpanel);
-		
-		this.container.parent().trigger('page-changed');
 	}
 	
-	zoomOn (panel,callback) {
-		
+	zoomOn (panel,callback)
+	{
 		var growth = this.container.parent().width() / panel.width();
 		var max = 'x';
 		var ygrowth =  this.container.parent().height() / panel.height();
@@ -142,7 +89,6 @@ class Reader {
 			max = 'y';
 		}
 		
-		// 			var margin = growth * 0.1;
 		var newcss = {
 			top:  - panel.position().top  * growth,
 			left: - panel.position().left * growth,
@@ -150,7 +96,7 @@ class Reader {
 			width:  this.container.width()  * growth
 		};
 		
-		// center panel horizontally or vertically within container's parent?
+		// center panel horizontally or vertically within container's parent
 		if (max == 'x')
 			newcss.top  += (this.container.parent().height() - panel.height() * growth) / 2;
 		else
@@ -181,7 +127,8 @@ class Reader {
 			w: this.container.parent().width(),
 			h: this.container.parent().height()
 		};
-		var imgsize = this.comic[this.currpage[this.comicsPath]]['size'];
+		
+		var imgsize = this.comic[this.currpage]['size'];
 		var ratio = imgsize[0] / imgsize[1];
 		if (size.w > size.h * ratio)
 			size.w = size.h * ratio;
@@ -213,13 +160,15 @@ class Reader {
 	nextPanel () { this.currpanel++; this.gotoPanel(this.currpanel); }
 	prevPanel () { this.currpanel--; this.gotoPanel(this.currpanel); }
 	
-	drawPanels (imginfo) {
+	drawPanels (imginfo)
+	{
 		this.container.children('*:not(.pageimg)').remove();
 		
 		var [imgw,imgh] = imginfo['size'];
 		
 		var i =1;
-		for (var p in imginfo['panels']) {
+		for (var p in imginfo['panels'])
+		{
 			p = imginfo['panels'][p];
 			var [x,y,w,h] = p;
 			
@@ -232,12 +181,11 @@ class Reader {
 			};
 			panel.css(panelcss);
 			
-			// uncomment the following line to have debug info on panels
 			panel.append('<span class="panelnb">'+(i++)+'</span>');
-			// 		panel.append('<span class="top">'+p.top);
-			// 		panel.append('<span class="bottom">'+p.bottom);
-			// 		panel.append('<span class="left">'+p.left);
-			// 		panel.append('<span class="right">'+p.right);
+			panel.append('<span class="top">'+y);
+			panel.append('<span class="bottom">'+(y+h));
+			panel.append('<span class="left">'+x);
+			panel.append('<span class="right">'+(x+w));
 			
 			this.container.append(panel);
 		}
