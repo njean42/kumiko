@@ -34,6 +34,8 @@ k = Kumiko({
 })
 
 file_or_folder = args.input[0]
+if file_or_folder[-1] == '/':
+	file_or_folder = file_or_folder[0:-1]
 
 folder = file_or_folder
 if os.path.isdir(file_or_folder):
@@ -57,13 +59,13 @@ else:
 
 # generate html file for viewing the result
 if args.html or args.browser:
-	print('Generating HTML file')
 	html_file = os.path.join('tests/results',os.path.basename(file_or_folder)+'.html')
 	fh = open(html_file, 'w')
 	fh.write(HTML.header(reldir='../../'))
 	fh.write(HTML.reader(info,os.path.relpath(folder,'tests/results')+'/',args.html_debug))
 	fh.write(HTML.footer)
 	fh.close()
+	print('Generated HTML file:',html_file)
 
 
 if args.browser:
