@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-import os
+import os, json, sys
 import cv2 as cv
 import numpy as np
 
@@ -23,9 +23,6 @@ class Kumiko:
 		if 'min_panel_size_ratio' in options and options['min_panel_size_ratio']:
 			self.options['min_panel_size_ratio'] = options['min_panel_size_ratio']
 	
-	def read_image(self,filename):
-		return cv.imread(filename)
-	
 	
 	def parse_dir(self,directory):
 		filenames = []
@@ -45,7 +42,11 @@ class Kumiko:
 		for filename in filenames:
 			if self.options['progress']:
 				print("\t",filename)
-			infos.append(self.parse_image(filename))
+			
+			try:
+				infos.append(self.parse_image(filename))
+			except Exception:
+				pass  # this file is not an image, will not be part of the results
 		
 		return infos
 	
@@ -181,8 +182,9 @@ class Kumiko:
 	
 	
 	def parse_image(self,filename):
-		img = self.read_image(filename)
-		# TODO: handle error
+		img = cv.imread(filename)
+		if not isinstance(img,np.ndarray) or img.size == 0:
+			raise Exception('File {} is not an image'.format(filename))
 		
 		size = list(img.shape[:2])
 		size.reverse()  # get a [width,height] list
@@ -192,6 +194,15 @@ class Kumiko:
 			'size': size,
 			'panels': []
 		}
+		
+		# get license for this file
+		if os.path.isfile(filename+'.license'):
+			with open(filename+'.license') as fh:
+				try:
+					infos['license'] = json.load(fh)
+				except json.decoder.JSONDecodeError:
+					print('License file {} is not a valid JSON file'.format(filename+'.license'))
+					sys.exit(1)
 		
 		self.gutterThreshold = Kumiko.getGutterThreshold(infos['size'])
 		

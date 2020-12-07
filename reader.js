@@ -40,7 +40,8 @@ class Reader {
 		});
 		this.gui.append(this.container);
 		
-		this.add_controls();
+		if ('controls' in options && options['controls'])
+			this.add_controls();
 		
 		window.addEventListener('orientationchange', function () {
 			setTimeout( function () { this.gotoPanel(this.currpanel); }.bind(this), 500);  // slight delay to make it work better, not sure why :)
@@ -86,6 +87,16 @@ class Reader {
 		
 		this.container.children('img').remove();
 		this.container.prepend(img);
+		
+		// show license
+		var license = this.get_license(imginfo);
+		if (license)
+		{
+			this.gui.append('<span class="license"/>');
+			this.gui.children('.license').html(license);
+		}
+		else
+			$('.license',this.gui).remove();
 		
 		var was_zoomed = this.container.is('.zoomed');
 		
@@ -239,6 +250,27 @@ class Reader {
 		});
 	}
 	
+	get_license(page)
+	{
+		if (!page.license)
+			return '';
+		
+		var html = [];
+		for (var i=0; i < 3; i++)
+		{
+			var k = ['title','author','license'][i];
+			if (k in page.license)
+			{
+				var elt = page.license;
+				html.push(
+					{title:'',author:'by ',license:''}[k] +
+					(elt[k+'_link'] ? '<a target="_blank" href="'+elt[k+'_link']+'">'+elt[k]+'</a>' : elt[k])
+				);
+			}
+		}
+		return html.join(', ');
+	}
+	
 	showMenu(show=true)
 	{
 		if (show)
@@ -274,6 +306,12 @@ $(document).delegate( 'input[name=viewmode]', 'change', function () {
 $(document).delegate( '.kumiko-reader', 'click touch', function (e) {
 	$(this).data('reader').next();
 });
+
+// Prevent click on page when clicking on license links
+$(document).delegate( '.license a', 'click touch', function (e) {
+	e.stopPropagation();
+});
+
 
 // Show menu on double click
 $(document).delegate( '.kumiko-reader', 'dblclick', function (e) {

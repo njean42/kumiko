@@ -1,7 +1,5 @@
 
 
-from lib.panel import Panel
-
 
 class HTML:
 	def header(title='',reldir=''):
@@ -65,7 +63,8 @@ class HTML:
 				var reader = new Reader({{
 					container: $('#reader'),
 					comicsJson: {json},
-					images_dir: '{images_dir}'
+					images_dir: '{images_dir}',
+					controls: true
 				}});
 				reader.loadPage(0);
 			</script>

@@ -50,7 +50,7 @@ class Panel:
 	
 	def __setattr__(self,name,value):
 		if name in ['w','h']:
-			print("Fatal error, can't set a panel's width or height")
+			print("Fatal error, setting a panel's width or height is not allowed")
 			sys.exit(1)
 		super().__setattr__(name, value)
 		

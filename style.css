@@ -49,6 +49,15 @@ ul {
 	right: 0;
 }
 
+.license {
+	position: absolute;
+	bottom: 0;
+	right: 15%;
+}
+.license a {
+	color: #ecf0f1;
+}
+
 
 /*****  PANELS  *****/
 .panel {

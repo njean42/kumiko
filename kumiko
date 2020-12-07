@@ -45,7 +45,7 @@ elif os.path.isfile(file_or_folder):
 	folder = os.path.dirname(file_or_folder)
 else:
 	print("--input (-i) is not a file or directory: '"+file_or_folder+"'")
-	sys.exit()
+	sys.exit(1)
 
 info = json.dumps(info)
 
