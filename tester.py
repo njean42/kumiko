@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-import os, subprocess, json, argparse
+import os, subprocess, json, argparse, re, tempfile
 from kumikolib import Kumiko,Panel
 from lib.html import HTML
 
@@ -44,6 +44,11 @@ class Tester:
 		print('\n########## Finding speech bubbles with kumiko version',git_version,'##########')
 		kumiko_bin = './kumiko'
 		
+		# Kumiko would not accept non-image files before v1.2, special case for .licence files
+		accepts_license_files = git_version >= 'v1.2' or not re.match('^v\d+.\d+$', git_version)
+		tmpfolder = None if accepts_license_files else tempfile.TemporaryDirectory(dir='./tests')
+		
+		# Get that Kumiko version
 		if git_version != 'current':
 			tempgit = '/tmp/kumikogit'
 			subprocess.run(['rm','-rf',tempgit])
@@ -52,6 +57,12 @@ class Tester:
 			kumiko_bin = os.path.join(tempgit,'kumiko')
 		
 		for f in self.files:
+			# move .license files to tempdir (<v1.2 compatibility)
+			if tmpfolder and os.path.isdir(f):
+				for g in os.scandir(f):
+					if re.search('\.license$',g.name):
+						os.rename(g,os.path.join(tmpfolder.name,os.path.basename(g)))
+			
 			print("##### Kumiko-cutting",f if isinstance(f,str) else f.name,"#####")
 			
 			f_savedir = os.path.join(self.savedir,git_version,os.path.basename(f))
@@ -59,6 +70,11 @@ class Tester:
 			
 			jsonfile = os.path.join(self.savedir,git_version,os.path.basename(f)+'.json')
 			subprocess.run(args=[kumiko_bin, '-i', f, '-o', jsonfile, '--debug-dir', f_savedir, '--progress'])
+			
+			if tmpfolder and os.path.isdir(f):
+				for g in os.scandir(tmpfolder.name):
+					if re.search('\.license$',g.name):
+						os.rename(g,os.path.join(f,os.path.basename(g)))
 	
 	
 	def compare_all(self):
