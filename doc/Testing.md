@@ -25,5 +25,5 @@ An HTML file is generated under `./tests/results/` that you can open locally (ad
 It will show you all the differences between the previous git version and yours!
 
 Take a look at the differencs between *Kumiko* versions:
-* [v1.11 and v1.1](https://kumiko-demo.njean.me/tests/results/diff-v1.1-v1.11.html)
+* [v1.2 and v1.1](https://kumiko-demo.njean.me/tests/results/diff-v1.1-v1.2.html)
 * [v1.1 and v1.0](https://kumiko-demo.njean.me/tests/results/diff-v1.0-v1.1.html)
