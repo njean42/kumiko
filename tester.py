@@ -12,8 +12,8 @@ class Tester:
 	files = []
 	git_repo = 'https://framagit.org/nicooo/kumiko'
 	git_versions = [
-		# 'v1.0', 'v1.1',
-		'v1.11',
+		# 'v1.0', 'v1.1', 'v1.11',
+		'v1.2',
 		'current',
 	]
 	
@@ -108,25 +108,30 @@ class Tester:
 						print('error, image sizes are not the same',json1[p]['size'],json2[p]['size'])
 						continue
 					
-					is_diff = False
-					if len(json1[p]['panels']) != len(json2[p]['panels']):
-						is_diff = True
-					else:
-						gutterThreshold = Kumiko.getGutterThreshold(json1[p]['size'])
-						for pan in range(len(json1[p]['panels'])):
-							p1 = Panel(json1[p]['panels'][pan], gutterThreshold/2)
-							p2 = Panel(json2[p]['panels'][pan], gutterThreshold/2)
-							if p1 != p2:
-								is_diff = True
-								break
+					gutterThreshold = Kumiko.getGutterThreshold(json1[p]['size'])
+					panels_v1 = list(map(lambda p: Panel(p, gutterThreshold/2), json1[p]['panels']))
+					panels_v2 = list(map(lambda p: Panel(p, gutterThreshold/2), json2[p]['panels']))
+					
+					known_panels = [[],[]]
+					j = -1
+					for p1 in panels_v1:
+						j += 1
+						if p1 in panels_v2:
+							known_panels[0].append(j)
+					j = -1
+					for p2 in panels_v2:
+						j += 1
+						if p2 in panels_v1:
+							known_panels[1].append(j)
 					
 					images_dir = f if os.path.isdir(f) else os.path.dirname(f)
 					images_dir = os.path.relpath(images_dir,'tests/results')+'/'
 					
-					if is_diff:
+					if len(known_panels[0]) != len(panels_v1) or len(known_panels[1]) != len(panels_v2):
 						files_diff[json1[p]['filename']] = {
 							'jsons': [json.dumps([json1[p]]),json.dumps([json2[p]])],
-							'images_dir': images_dir
+							'images_dir': images_dir,
+							'known_panels': [json.dumps(known_panels[0]),json.dumps(known_panels[1])]
 						}
 			
 			print('Found',len(files_diff),'differences')
@@ -143,7 +148,7 @@ class Tester:
 			diff_file.write(HTML.nbdiffs(files_diff))
 			
 			for img in files_diff:
-				diff_file.write(HTML.side_by_side_panels(img,files_diff[img]['jsons'],v1,v2,images_dir=files_diff[img]['images_dir']))
+				diff_file.write(HTML.side_by_side_panels(img,files_diff[img]['jsons'],v1,v2,images_dir=files_diff[img]['images_dir'], known_panels=files_diff[img]['known_panels']))
 			
 			diff_file.write(HTML.footer)
 			diff_file.close()

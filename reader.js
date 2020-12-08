@@ -25,6 +25,8 @@ class Reader {
 		}
 		this.comic = options.comicsJson;
 		
+		this.known_panels = options.known_panels ? options.known_panels : [];
+		
 		// init attributes
 		this.currpage = 0;
 		this.currpanel = 0;
@@ -206,13 +208,16 @@ class Reader {
 		
 		var [imgw,imgh] = imginfo['size'];
 		
-		var i =1;
+		var i = 1;
 		for (var p in imginfo['panels'])
 		{
+			var unknown = !this.known_panels.includes(parseInt(p));
 			p = imginfo['panels'][p];
 			var [x,y,w,h] = p;
 			
 			var panel = $('<div class="panel"><!-- --></div>');
+			if (unknown)
+				panel.addClass('unknown');
 			var panelcss = {
 				top: '' + y/imgh*100 + '%',
 				left: '' + x/imgw*100 + '%',

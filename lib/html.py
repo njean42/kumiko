@@ -33,7 +33,7 @@ class HTML:
 	
 	
 	pageId = 0
-	def side_by_side_panels(img,jsons,v1,v2,images_dir):
+	def side_by_side_panels(img,jsons,v1,v2,images_dir,known_panels):
 		html = '<h2>{0}</h2><div class="sidebyside"><div class="version">{1}</div><div class="version">{2}</div></div><div class="sidebyside">'.format(img,v1,v2)
 		
 		oneside = """
@@ -42,13 +42,16 @@ class HTML:
 				var reader = new Reader({{
 					container: $('#page{id}'),
 					comicsJson: {json},
-					images_dir: '{images_dir}'
+					images_dir: '{images_dir}',
+					known_panels: {known_panels}
 				}});
 				reader.loadPage(0);
 			</script>
 			"""
+		i = -1
 		for js in jsons:
-			html += oneside.format(id=HTML.pageId,json=js,images_dir=images_dir)
+			i += 1
+			html += oneside.format(id=HTML.pageId,json=js,images_dir=images_dir,known_panels=known_panels[i])
 			HTML.pageId += 1
 		
 		html += '</div>'

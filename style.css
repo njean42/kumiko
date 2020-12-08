@@ -68,9 +68,12 @@ ul {
 	align-items: center;
 }
 .kumiko-reader.debug .container:not(.zoomed) .panel {
-	border: 2px solid red;
+	border: 2px solid #3498db;
 	margin-left: -2px;
 	margin-top: -2px;
+}
+.kumiko-reader.debug .container:not(.zoomed) .panel.unknown {
+	border: 4px solid #e74c3c;
 }
 .kumiko-reader.debug .container:not(.zoomed) .panel:hover,
 .kumiko-reader.debug .container:not(.zoomed) .panel:active {
@@ -81,12 +84,15 @@ ul {
 	display: none;
 }
 .kumiko-reader.debug .container:not(.zoomed) .panel span {
-	color: red;
+	color: #3498db;
 	font-size: 75%;
 	background-color: white;
 	opacity: 0.9;
 	border-radius: 30px;
 	padding: 2px 6px;
+}
+.kumiko-reader.debug .container:not(.zoomed) .panel.unknown span {
+	color: #e74c3c;
 }
 .kumiko-reader.debug .container:not(.zoomed) .panel span.panelnb { font-size: 150%; }
 
