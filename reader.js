@@ -17,7 +17,7 @@ class Reader {
 			console.error('no images_dir given in options');
 			return;
 		}
-		this.images_dir = options.images_dir
+		this.images_dir = options.images_dir;
 		
 		if (!options.comicsJson || typeof options.comicsJson != 'object') {
 			console.error('no comicsJson given in options, or not a javascript object');
@@ -78,7 +78,7 @@ class Reader {
 		$('.pagenb',this.gui).html('page '+(page+1)+' <small>/'+this.comic.length+'</small>')
 		
 		var imginfo = this.comic[page];
-		var imgurl = this.images_dir + imginfo.filename.split('/').reverse()[0];
+		var imgurl = this.images_dir == 'urls' ? imginfo.filename : this.images_dir + imginfo.filename.split('/').reverse()[0];
 		
 		var img = $('<img class="pageimg" src="'+imgurl+'"/>');
 		img.css({
@@ -327,6 +327,9 @@ $(document).delegate( '.kumiko-reader', 'dblclick', function (e) {
 /**** KEYBOARD NAVIGATION ****/
 
 $(document).keydown(function(e) {
+	if (e.altKey)  // alt+left is shortcut for previous page, don't  prevent it
+		return;
+	
 	switch(e.which) {
 		case 37: // left
 			reader.prev();

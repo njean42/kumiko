@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 
-import os, json, sys
+import os, json, sys, tempfile, requests
 import cv2 as cv
 import numpy as np
+from urllib.parse import urlparse
 
 from lib.panel import Panel
 
@@ -24,28 +25,45 @@ class Kumiko:
 			self.options['min_panel_size_ratio'] = options['min_panel_size_ratio']
 	
 	
-	def parse_dir(self,directory):
+	def parse_url_list(self,urls):
+		tempdir = tempfile.TemporaryDirectory()
+		i = 0
+		for url in urls:
+			i += 1
+			parts = urlparse(url)
+			if not parts.netloc or not parts.path:
+				continue
+			
+			r = requests.get(url)
+			with open(os.path.join(tempdir.name,'img'+str(i)), 'wb') as f:
+				f.write(r.content)
+		
+		return self.parse_dir(tempdir.name,urls=urls)
+	
+	
+	def parse_dir(self,directory,urls=None):
 		filenames = []
-		for root, dirs, files in os.walk(directory):
-			for filename in files:
-				filenames.append(os.path.join(root,filename))
-		filenames.sort()
-		return self.parse_images(filenames)
+		for filename in os.scandir(directory):
+			filenames.append(filename.path)
+		return self.parse_images(filenames,urls)
 	
 	
-	def parse_images(self,filenames=[]):
+	def parse_images(self,filenames=[],urls=None):
 		infos = []
 		
 		if self.options['progress']:
 			print(len(filenames),'files')
 		
+		i = -1
 		for filename in filenames:
+			i += 1
 			if self.options['progress']:
-				print("\t",filename)
+				print("\t",urls[i] if urls else filename)
 			
 			try:
-				infos.append(self.parse_image(filename))
+				infos.append(self.parse_image(filename,url=urls[i] if urls else None))
 			except Exception:
+				print("Not an image, will be ignored: {}".format(filename), file=sys.stderr) 
 				pass  # this file is not an image, will not be part of the results
 		
 		return infos
@@ -181,7 +199,7 @@ class Kumiko:
 		return sum(size) / 2 / 20
 	
 	
-	def parse_image(self,filename):
+	def parse_image(self,filename,url=None):
 		img = cv.imread(filename)
 		if not isinstance(img,np.ndarray) or img.size == 0:
 			raise Exception('File {} is not an image'.format(filename))
@@ -190,7 +208,7 @@ class Kumiko:
 		size.reverse()  # get a [width,height] list
 		
 		infos = {
-			'filename': os.path.basename(filename),
+			'filename': url if url else os.path.basename(filename),
 			'size': size,
 			'panels': []
 		}
