@@ -11,6 +11,8 @@ More detailed help can be found by running `kumiko --help`.
 
 	kumiko -i /path/to/comicbook/page001.jpg
 
+(Add `--html-debug -b firefox` to view the panels, on top of given image, in your browser!)
+
 The result would look like the following:
 
 	[
@@ -48,6 +50,8 @@ The `filename`s in our JSON object are relative to the working directory from wh
 
 	kumiko -i /path/to/comicbook/
 
+(Add `--html-debug -b firefox` to view the panels for all pages, on top your images, in your browser!)
+
 The result of such a command would be a JSON-formatted array of all images in the folder:
 
 	[
@@ -81,3 +85,20 @@ You can pass `kumiko` a `--debug-dir /path/to/debug-info` parameter that tells y
 This will create an image for each page that Kumiko analysed, renamed `$filename-contours.jpg`.
 These files will be found in the `/path/to/debug-info` folder (should exist and be writable).
 Panel contours and image numbering is drawn onto every debugging image.
+
+
+## License information
+
+License information may be provided in a text file under the same directory as each image (named `myimage.jpg.license`).
+It must be valid JSON data and will be available under a `license` key in the resulting JSON, for each image.
+
+The fields known to our javascript reader are the following:
+
+	{
+		"title": "this image name",
+		"title_link": "a link to where this file can be found",
+		"author": "the author of this image",
+		"author_link": "a link to the author's web page",
+		"licence": "this image license",
+		"licence_link": "a link to the license"
+	}

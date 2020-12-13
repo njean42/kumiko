@@ -4,7 +4,7 @@
 
 ![Kumiko mascot by Cthulhulumaid](artwork/kumiko-big.png "Kumiko mascot by Cthulhulumaid")
 
-> Kumiko mascot by Cthulhulumaid, [CC-BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/ "Creative Commons License")
+> Kumiko mascot by [Hurluberlue](https://www.twitch.tv/hurluberlue "twitch link"), [CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/ "Creative Commons License")
 
 *Kumiko, the Comics Cutter* is a set of tools to compute useful information about comic book pages, panels, and more.
 Its main strength is to find out the **locations of panels** within a comic's page (image file).
@@ -45,9 +45,7 @@ You read a page, possibly zooming on it to be able to read speech bubbles, then 
 With knowledge about panels locations, we can imagine a comic reader that also offers *panel-by-panel reading*.
 This is especially interesting for **small screens**, on which you probably can't read the texts if a whole page is displayed.
 
-We provide an example implementation of such a reader application.
-Read more in the [example Reader documentation](doc/Reader.md).
-
+Just run `kumiko -i /path/to/comicpage.jpg -b firefox` on your *comicpage.jpg* file, and read it panel-by-panel in your browser!
 
 
 # Requirements
@@ -65,7 +63,7 @@ If you successfully use *Kumiko* on any other platform, please let us know!
 
 See the [usage doc](doc/Usage.md) for details on how to use the *Kumiko* tools.
 
-Also check the [testing doc](doc/Testing.md) if you want to test modified version of the code.
+Also check the [testing doc](doc/Testing.md) if you want to test modified versions of the code.
 
 
 
