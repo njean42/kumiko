@@ -106,9 +106,8 @@ class Tester:
 						print('error, image sizes are not the same',json1[p]['size'],json2[p]['size'])
 						continue
 					
-					gutterThreshold = Kumiko.getGutterThreshold(json1[p]['size'])
-					panels_v1 = list(map(lambda p: Panel(p, gutterThreshold/2), json1[p]['panels']))
-					panels_v2 = list(map(lambda p: Panel(p, gutterThreshold/2), json2[p]['panels']))
+					panels_v1 = list(map(lambda p: Panel(p), json1[p]['panels']))
+					panels_v2 = list(map(lambda p: Panel(p), json2[p]['panels']))
 					
 					known_panels = [[],[]]
 					j = -1

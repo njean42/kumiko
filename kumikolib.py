@@ -168,10 +168,6 @@ class Kumiko:
 						setattr(panels[i],d,newcoord)
 	
 	
-	def getGutterThreshold(size):
-		return sum(size) / 2 / 20
-	
-	
 	def parse_image(self,filename,url=None):
 		img = cv.imread(filename)
 		if not isinstance(img,np.ndarray) or img.size == 0:
@@ -193,8 +189,6 @@ class Kumiko:
 				except json.decoder.JSONDecodeError:
 					print('License file {} is not a valid JSON file'.format(filename+'.license'))
 					sys.exit(1)
-		
-		self.gutterThreshold = Kumiko.getGutterThreshold(infos['size'])
 		
 		gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
 		
