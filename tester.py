@@ -65,11 +65,9 @@ class Tester:
 			
 			print("##### Kumiko-cutting",f if isinstance(f,str) else f.name,"#####")
 			
-			f_savedir = os.path.join(self.savedir,git_version,os.path.basename(f))
-			subprocess.run(['mkdir','-p',f_savedir])
-			
+			subprocess.run(['mkdir','-p',os.path.join(self.savedir,git_version)])
 			jsonfile = os.path.join(self.savedir,git_version,os.path.basename(f)+'.json')
-			subprocess.run(args=[kumiko_bin, '-i', f, '-o', jsonfile, '--debug-dir', f_savedir, '--progress'])
+			subprocess.run(args=[kumiko_bin, '-i', f, '-o', jsonfile, '--progress'])
 			
 			if tmpfolder and os.path.isdir(f):
 				for g in os.scandir(tmpfolder.name):
