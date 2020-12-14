@@ -28,7 +28,7 @@ ul {
 	position: relative;
 }
 
-.kumiko-reader > *:not(.container) {
+.page-nb, .burger, .menu > ul {
 	z-index: 20;
 	padding: 0.3em 0.5em;
 	background-color: #34495e;
@@ -39,8 +39,33 @@ ul {
 
 .menu {
 	position: absolute;
-	bottom: 0;
+	top: 0;
 	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+.menu ul {
+	display: flex;
+	flex-direction: column;
+	padding: 2em;
+	font-size: 150%;
+	position: relative;
+}
+.menu .exit {
+	position: absolute;
+	right: 1vmin;
+	top: 1vmin;
+	font-style: normal;
+}
+.burger {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	font-size: 6vmin;
+	font-style: normal;
 }
 
 .pagenb {

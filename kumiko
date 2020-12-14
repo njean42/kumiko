@@ -19,7 +19,6 @@ parser.add_argument('-o', '--output', nargs=1, help='A file name to save json/ht
 # HTML reader page options
 parser.add_argument('-b', '--browser', nargs=1, help='Opens given browser to read your comic page(s) panel-by-panel! (implies --html)', choices=['firefox','konqueror','chromium'])
 parser.add_argument('--html', action='store_true', help='Generates an HTML file for reading')
-parser.add_argument('--html-debug', action='store_true', help='Shows debug information on resulting HTML page (implies --html)')
 parser.add_argument('--html-static-dir', nargs=1, help='When generating HTML, this will be the relative directory for javascript files: <script src="$static-dir/...">  (implies --html)')
 
 # Configuration tweaks
@@ -67,17 +66,17 @@ info = json.dumps(info)
 
 
 # Generate HTML
-if args.html or args.browser or args.html_debug or args.html_static_dir:
+if args.html or args.browser or args.html_static_dir:
 	images_dir = os.path.relpath(folder,'tests/results')+'/' if folder else 'urls'
 	html = ''
 	html += HTML.header(reldir = args.html_static_dir[0] if args.html_static_dir else '../../')
-	html += HTML.reader(info,images_dir,args.html_debug)
+	html += HTML.reader(info,images_dir)
 	html += HTML.footer
 	
 	if args.output:
 		html_file = args.output[0]
 	
-	if args.browser or args.html_debug or args.output:
+	if args.browser or args.output:
 		fh = open(html_file, 'w')
 		fh.write(html)
 		fh.close()
