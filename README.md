@@ -19,7 +19,7 @@ Mainly, the contour detection algorithm is used to detect panels within an image
 
 *TL;WR* Too Long; Won't Read the whole doc?
 
-A **live demo** is now [available here](https://kumiko-demo.njean.me/), where you can try *Kumiko* out and cut your own comic pages into panels.
+A **live demo** is now [available here](https://kumiko.njean.me/demo), where you can try *Kumiko* out and cut your own comic pages into panels.
 
 
 
