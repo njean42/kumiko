@@ -11,7 +11,6 @@ class HTML:
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<script type="text/javascript" src="{reldir}jquery-3.2.1.min.js"></script>
-	<script type="text/javascript" src="{reldir}jquery.touchSwipe.min.js"></script>
 	<script type="text/javascript" src="{reldir}reader.js"></script>
 	<link rel="stylesheet" media="all" href="{reldir}style.css" />
 	<style type="text/css">

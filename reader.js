@@ -372,25 +372,3 @@ $(document).keydown(function(e) {
 	}
 	e.preventDefault();
 });
-
-
-/**** MOBILE NAVIGATION ****/
-
-// Navigate on swipe left/right
-$(function() {
-	$('.kumiko-reader').swipe({
-		swipe: function(event, direction, distance, duration, fingerCount, fingerData)
-		{
-			switch (direction)
-			{
-				case 'left':
-					$(this).data('reader').prev();
-					break;
-				case 'right':
-					$(this).data('reader').next();
-					break;
-			}
-		}
-	});
-	$('.kumiko-reader').swipe( {fingers:2} );
-});
