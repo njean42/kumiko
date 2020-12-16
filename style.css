@@ -28,9 +28,9 @@ ul {
 	position: relative;
 }
 
-.page-nb, .burger, .menu > ul {
+.pagenb, .burger, .prev, .menu > ul {
 	z-index: 20;
-	padding: 0.3em 0.5em;
+	padding: 0.1em 0.4em;
 	background-color: #34495e;
 	opacity: 0.9;
 	color: #ecf0f1;
@@ -60,19 +60,37 @@ ul {
 	top: 1vmin;
 	font-style: normal;
 }
-.burger {
+
+/* Fading corner icons/infos */
+.prev {
 	position: absolute;
+	top: 0;
 	left: 0;
-	bottom: 0;
 	font-size: 6vmin;
 	font-style: normal;
 }
-
+.burger {
+	position: absolute;
+	top: 0;
+	right: 0;
+	font-size: 6vmin;
+	font-style: normal;
+}
 .pagenb {
 	position: absolute;
 	bottom: 0;
 	right: 0;
 }
+.prev, .burger, .pagenb {
+	transition-property: opacity;
+	transition-duration: 2s;
+	opacity: 0.1;
+}
+.prev:active, .burger:active, .pagenb:active {
+	transition-duration: 0s;
+	opacity: 1;
+}
+
 
 .license {
 	position: absolute;

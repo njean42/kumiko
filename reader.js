@@ -115,8 +115,6 @@ class Reader {
 		if (was_zoomed)
 			this.gotoPanel(this.currpanel);
 		
-		this.showMenu(false);
-		this.gui.children('.pagenb').stop().fadeIn(500, function () { $(this).fadeOut(3000); });
 		return true;
 	}
 	
@@ -199,7 +197,6 @@ class Reader {
 			if (!nextpage)
 				this.currpanel--;
 		}
-		this.showMenu(false);
 	}
 	nextPanel () { this.currpanel++; this.gotoPanel(this.currpanel); }
 	prevPanel () { this.currpanel--; this.gotoPanel(this.currpanel); }
@@ -246,11 +243,13 @@ class Reader {
 		
 		var burger = $('<i class="burger">☰</i>');
 		burger.data('reader',this);
-		burger.on('click touch', function (e) {
-			$(this).data('reader').showMenu();
-			e.stopPropagation();
-		});
+		burger.on('click touch', function (e) { $(this).data('reader').showMenu(); });
 		this.gui.append(burger);
+		
+		var btprev = $('<i class="prev">←</i>');
+		btprev.data('reader',this);
+		btprev.on('click touch', function (e) { $(this).data('reader').prev(); });
+		this.gui.append(btprev);
 		
 		var menu = $('<div class="menu"/>');
 		var menuul = $('<ul/>');
@@ -258,7 +257,7 @@ class Reader {
 		menuul.append('<li><label><input type="radio" name="viewmode" value="panel" autocomplete="off" />Panel</label></li>');
 		menu.append(menuul);
 		
-		var btn_debug = $('<label><input type="checkbox" class="toggleDebug" />Show panels</label>');
+		var btn_debug = $('<label><input type="checkbox" class="toggleDebug" autocomplete="off" />Show panels</label>');
 		btn_debug.children('.toggleDebug').on('change', function () { _reader.gui.toggleClass('debug'); });
 		menuul.append(btn_debug);
 		
@@ -298,19 +297,9 @@ class Reader {
 	showMenu(show=true)
 	{
 		if (show)
-		{
 			this.gui.children('.menu').show();
-			this.gui.children('.burger').hide();
-		}
 		else
-		{
 			this.gui.children('.menu').hide();
-			this.gui.children('.burger').show();
-		}
-	}
-	toggleMenu()
-	{
-		this.showMenu(!this.gui.children('.menu').is(':visible'));
 	}
 }
 
@@ -361,10 +350,6 @@ $(document).keydown(function(e) {
 		
 		case 80: // 'p' key: switch between page and panel reading
 			$('input[name=viewmode]:not(:checked)').prop('checked',true).change();
-			break;
-		
-		case 77: // 'm' key: show/hide menu
-			reader.toggleMenu();
 			break;
 		
 		default:
