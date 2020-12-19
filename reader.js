@@ -30,7 +30,7 @@ class Reader {
 		// init attributes
 		this.currpage = 0;
 		this.currpanel = 0;
-		this.debug = this.gui.hasClass('debug') || window.location.hash == '#debug';
+		this.debug = this.gui.hasClass('debug') || 'debug' in this.getHashInfo();
 		if (this.debug)
 			this.gui.addClass('debug');
 		
@@ -44,12 +44,46 @@ class Reader {
 		});
 		this.gui.append(this.container);
 		
-		if ('controls' in options && options['controls'])
+		if (options['controls'])
 			this.add_controls();
 		
 		window.addEventListener('orientationchange', function () {
 			setTimeout( function () { this.gotoPanel(this.currpanel); }.bind(this), 500);  // slight delay to make it work better, not sure why :)
 		}.bind(this));
+	}
+	
+	getHashInfo ()
+	{
+		var hash = window.location.hash.replace(/^#/,'').split(',');
+		var info = {};
+		for (var i in hash)
+		{
+			var h = hash[i].split('=');
+			info[h[0]] = h[1];
+		}
+		return info;
+	}
+	
+	setHashInfo (newinfo)
+	{
+		var info = this.getHashInfo();
+		for (var i in newinfo)
+			info[i] = newinfo[i];
+		info = Object.entries(info).map(function (kv) {
+			if (kv[1] === null)
+				return '';
+			return kv[0] + (kv[1] ? '=' + kv[1] : '');
+		}).filter(function(v){return v?true:false});
+		window.location.hash = info.join(',');
+		
+	}
+	
+	start ()
+	{
+		var page = this.getHashInfo()['page'];
+		if (!page)
+			page = 0;
+		this.loadPage(page);
 	}
 	
 	next()
@@ -71,11 +105,14 @@ class Reader {
 	loadPrevPage() { return this.loadPage(this.currpage-1); }
 	loadPage(page=0)
 	{
+		page = parseInt(page);
+		
 		// don't go to a page below 0, or above the number of pages in this comic
 		if (page < 0 || page >= this.comic.length)
 			return false;
 		
 		this.currpage = page;
+		this.setHashInfo({page: page ? page : null});
 		
 		$('.pagenb',this.gui).html('page '+(page+1)+' <small>/'+this.comic.length+'</small>')
 		
@@ -258,11 +295,26 @@ class Reader {
 		menu.append(menuul);
 		
 		var btn_debug = $('<label><input type="checkbox" class="toggleDebug" autocomplete="off" />Show panels</label>');
-		btn_debug.children('.toggleDebug').on('change', function () { _reader.gui.toggleClass('debug'); });
+		if (this.debug)
+			btn_debug.children('.toggleDebug').prop('checked',true);
+		btn_debug.children('.toggleDebug').on('change', function () {
+			_reader.gui.toggleClass('debug');
+			_reader.setHashInfo({'debug': _reader.gui.hasClass('debug') ? '' : null});
+		});
 		menuul.append(btn_debug);
 		
 		menuul.append('<i class="exit">X</i>');
 		menuul.children('.exit').on('click touch', function () { _reader.showMenu(false); })
+		
+		menuul.append(' \
+			<li>---</li> \
+			<li class="kbd"><span>click/tap</span><span>next page/panel</span></li> \
+			<li class="kbd"><span>right/down</span><span>next page/panel</span></li> \
+			<li class="kbd"><span>left/up</span><span>previous page/panel</span></li> \
+			<li class="kbd"><span>p</span><span>switch page/panel view</span></li> \
+			<li class="kbd"><span>m</span><span>show this menu</span></li> \
+			<li class="kbd"><span>d</span><span>debug (show panels)</span></li> \
+		');
 		
 		this.gui.append(menu);
 		this.showMenu(false);
@@ -296,10 +348,12 @@ class Reader {
 	
 	showMenu(show=true)
 	{
-		if (show)
-			this.gui.children('.menu').show();
-		else
-			this.gui.children('.menu').hide();
+		var menu = this.gui.children('.menu');
+		
+		if (show == 'toggle')
+			show = !menu.is(':visible');
+		
+		show ? menu.show() : menu.hide();
 	}
 }
 
@@ -341,11 +395,22 @@ $(document).keydown(function(e) {
 	
 	switch(e.which) {
 		case 37: // left
+		case 38: // up
 			reader.prev();
 			break;
 			
 		case 39: // right
+		case 40: // down
 			reader.next();
+			break;
+		
+		case 68: // 'd' debug (show panels)
+			var d = $('input.toggleDebug');
+			d.prop('checked',d.is(':checked')).change();
+			break;
+		
+		case 77: // 'm' key: toggle menu
+			reader.showMenu('toggle');
 			break;
 		
 		case 80: // 'p' key: switch between page and panel reading

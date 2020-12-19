@@ -6,6 +6,7 @@ body {
 	height: 96vh;
 	margin-top: 2vh;
 	margin-left: 2vw;
+	font-family: sans-serif;
 }
 
 ul {
@@ -32,7 +33,6 @@ ul {
 	z-index: 20;
 	padding: 0.1em 0.4em;
 	background-color: #34495e;
-	opacity: 0.9;
 	color: #ecf0f1;
 	font-weight: bold;
 }
@@ -50,10 +50,14 @@ ul {
 .menu ul {
 	display: flex;
 	flex-direction: column;
+	border: 2px solid #ecf0f1;
+	border-radius: 5px;
 	padding: 2em;
 	font-size: 150%;
 	position: relative;
 }
+.menu .kbd { font-size: 80%; display: flex; justify-content: space-between;}
+.menu .kbd span:nth-child(1) { color: #bdc3c7; margin-right: 1em; }
 .menu .exit {
 	position: absolute;
 	right: 1vmin;

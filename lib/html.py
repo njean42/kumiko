@@ -46,7 +46,7 @@ class HTML:
 					images_dir: '{images_dir}',
 					known_panels: {known_panels}
 				}});
-				reader.loadPage(0);
+				reader.start();
 			</script>
 			"""
 		i = -1
@@ -69,7 +69,7 @@ class HTML:
 					images_dir: '{images_dir}',
 					controls: true
 				}});
-				reader.loadPage(0);
+				reader.start();
 			</script>
 			""".format(json=js,images_dir=images_dir)
 	
