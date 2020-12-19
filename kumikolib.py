@@ -20,8 +20,11 @@ class Kumiko:
 	
 	def __init__(self,options={}):
 		
-		self.options['debug_dir'] = 'debug_dir' in options and options['debug_dir']
-		self.options['progress']  = 'progress'  in options and options['progress']
+		for o in ['debug_dir','progress','rtl']:
+			self.options[o] = o in options and options[o]
+		
+		if self.options['rtl']:
+			Panel.set_numbering('rtl')
 		
 		self.options['min_panel_size_ratio'] = 1/15
 		if 'min_panel_size_ratio' in options and options['min_panel_size_ratio']:

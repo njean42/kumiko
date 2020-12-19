@@ -69,7 +69,7 @@ Also check the [testing doc](doc/Testing.md) if you want to test modified versio
 
 # Numbering
 
-The numbering is left to right, top to bottom for now (see roadmap).
+The numbering is left-to-right, or right-to-left if requested.
 
 Here is an example of how *Kumiko* is going to number panels by default (numbers and red lines not in the original picture).
 
@@ -95,7 +95,6 @@ If you have ideas on how to programmatically guess the background color of a pag
 
 * be able to detect panel contours on pages with **non-white background**
 	* implies being able to determine the background color: histogram, probing of some kind? (worst case: manually?)
-* provide an option for **right-to-left numbering**, critical e.g. for mangas
 
 
 ## Back-office (validation / edition tool)

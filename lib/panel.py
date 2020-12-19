@@ -6,6 +6,14 @@ import numpy as np
 
 
 class Panel:
+	
+	numbering = 'ltr'  # left-to-right by default
+	
+	def set_numbering(numbering):
+		if not (numbering in ['ltr','rtl']):
+			raise Exception('Fatal error, unknown numbering: '+str(numbering))
+		Panel.numbering = numbering
+	
 	def __init__(self, xywh=None, polygon=None):
 		if xywh is None and polygon is None:
 			raise Exception('Fatal error: no parameter to define Panel boundaries')
@@ -42,11 +50,11 @@ class Panel:
 		
 		# panel is left from other
 		if other.x >= self.r - self.wt and other.x >= self.x - self.wt:
-			return True
+			return True if Panel.numbering == 'ltr' else False
 		
 		# panel is right from other
 		if self.x >= other.r - self.wt and self.x >= other.x - self.wt:
-			return False
+			return False if Panel.numbering == 'ltr' else True
 		
 		return True  # should not happen, TODO: raise an exception?
 	
@@ -65,9 +73,9 @@ class Panel:
 		# update width and height
 		if name in ['x','y','r','b']:
 			super().__setattr__('w',self.r - self.x)
-			super().__setattr__('wt',self.w / 10)
+			super().__setattr__('wt',self.w / 10)     # wt = width threshold (under which two edge coordinates are considered equal)
 			super().__setattr__('h',self.b - self.y)
-			super().__setattr__('ht',self.h / 10)
+			super().__setattr__('ht',self.h / 10)     # ht = height threshold
 	
 	
 	def overlap_panel(self,other):

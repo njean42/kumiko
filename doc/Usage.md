@@ -37,14 +37,12 @@ The *size* gives us the *[width,height]* of our image, in pixels.
 The panel details are also expressed in pixels.
 The 4 values representing a panel are given in the following order: **[x,y,width,height]**, with *x* and *y* representing the **top-left corner** of the panel.
 
+Panels are sorted in left-to-right reading order by default.
+Add the `--rtl` option to have them sorted in right-to-left reading order (e.g. mangas).
+
 Note that, although Kumiko can detect panels with arbitrary shapes, it will return a rectangular bounding box for each one.
 This is because in the end, many things are rectangular: image files, our screens to display them...
 We may want an option in the future to get more accurate polygons instead.
-
-### File names
-
-The `filename`s in our JSON object are relative to the working directory from which we invoked the `./kumiko` command.
-
 
 ## Get panel information for all pages in one comic book
 
