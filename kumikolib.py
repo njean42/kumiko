@@ -32,16 +32,25 @@ class Kumiko:
 	
 	
 	def parse_url_list(self,urls):
+		if self.options['progress']:
+			print(len(urls),'files to download')
+		
 		tempdir = tempfile.TemporaryDirectory()
 		i = 0
+		nbdigits = len(str(len(urls)))
 		for url in urls:
+			filename = 'img'+('0' * nbdigits + str(i))[-nbdigits:]
+			
+			if self.options['progress']:
+				print('\t',url, (' -> '+filename) if urls else '')
+			
 			i += 1
 			parts = urlparse(url)
 			if not parts.netloc or not parts.path:
 				continue
 			
 			r = requests.get(url)
-			with open(os.path.join(tempdir.name,'img'+str(i)), 'wb') as f:
+			with open(os.path.join(tempdir.name,filename), 'wb') as f:
 				f.write(r.content)
 		
 		return self.parse_dir(tempdir.name,urls=urls)
@@ -58,7 +67,7 @@ class Kumiko:
 		infos = []
 		
 		if self.options['progress']:
-			print(len(filenames),'files')
+			print(len(filenames),'files to cut panels for')
 		
 		i = -1
 		for filename in sorted(filenames):
