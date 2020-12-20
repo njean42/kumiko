@@ -406,7 +406,7 @@ $(document).keydown(function(e) {
 		
 		case 68: // 'd' debug (show panels)
 			var d = $('input.toggleDebug');
-			d.prop('checked',d.is(':checked')).change();
+			d.prop('checked',!d.is(':checked')).change();
 			break;
 		
 		case 77: // 'm' key: toggle menu
