@@ -30,7 +30,9 @@ class Reader {
 		// init attributes
 		this.currpage = 0;
 		this.currpanel = 0;
-		this.debug = this.gui.hasClass('debug');
+		this.debug = this.gui.hasClass('debug') || 'debug' in this.getHashInfo();
+		if (this.debug)
+			this.gui.addClass('debug');
 		
 		// add image sub-container
 		this.container = $('<div class="container"/>');
@@ -42,12 +44,46 @@ class Reader {
 		});
 		this.gui.append(this.container);
 		
-		if ('controls' in options && options['controls'])
+		if (options['controls'])
 			this.add_controls();
 		
 		window.addEventListener('orientationchange', function () {
 			setTimeout( function () { this.gotoPanel(this.currpanel); }.bind(this), 500);  // slight delay to make it work better, not sure why :)
 		}.bind(this));
+	}
+	
+	getHashInfo ()
+	{
+		var hash = window.location.hash.replace(/^#/,'').split(',');
+		var info = {};
+		for (var i in hash)
+		{
+			var h = hash[i].split('=');
+			info[h[0]] = h[1];
+		}
+		return info;
+	}
+	
+	setHashInfo (newinfo)
+	{
+		var info = this.getHashInfo();
+		for (var i in newinfo)
+			info[i] = newinfo[i];
+		info = Object.entries(info).map(function (kv) {
+			if (kv[1] === null)
+				return '';
+			return kv[0] + (kv[1] ? '=' + kv[1] : '');
+		}).filter(function(v){return v?true:false});
+		window.location.hash = info.join(',');
+		
+	}
+	
+	start ()
+	{
+		var page = this.getHashInfo()['page'];
+		if (!page)
+			page = 0;
+		this.loadPage(page);
 	}
 	
 	next()
@@ -69,11 +105,14 @@ class Reader {
 	loadPrevPage() { return this.loadPage(this.currpage-1); }
 	loadPage(page=0)
 	{
+		page = parseInt(page);
+		
 		// don't go to a page below 0, or above the number of pages in this comic
 		if (page < 0 || page >= this.comic.length)
 			return false;
 		
 		this.currpage = page;
+		this.setHashInfo({page: page ? page : null});
 		
 		$('.pagenb',this.gui).html('page '+(page+1)+' <small>/'+this.comic.length+'</small>')
 		
@@ -113,8 +152,6 @@ class Reader {
 		if (was_zoomed)
 			this.gotoPanel(this.currpanel);
 		
-		this.showMenu(false);
-		this.gui.children('.pagenb').stop().fadeIn(500, function () { $(this).fadeOut(3000); });
 		return true;
 	}
 	
@@ -197,7 +234,6 @@ class Reader {
 			if (!nextpage)
 				this.currpanel--;
 		}
-		this.showMenu(false);
 	}
 	nextPanel () { this.currpanel++; this.gotoPanel(this.currpanel); }
 	prevPanel () { this.currpanel--; this.gotoPanel(this.currpanel); }
@@ -238,17 +274,51 @@ class Reader {
 	
 	add_controls()
 	{
+		var _reader = this;
 		// add controls and page info
 		this.gui.append('<span class="pagenb"/>');
+		
+		var burger = $('<i class="burger">☰</i>');
+		burger.data('reader',this);
+		burger.on('click touch', function (e) { $(this).data('reader').showMenu(); });
+		this.gui.append(burger);
+		
+		var btprev = $('<i class="prev">←</i>');
+		btprev.data('reader',this);
+		btprev.on('click touch', function (e) { $(this).data('reader').prev(); });
+		this.gui.append(btprev);
+		
 		var menu = $('<div class="menu"/>');
 		var menuul = $('<ul/>');
-		menuul.append('<li><label><input type="radio" name="viewmode" value="page"  autocomplete="off" />read page by page</label></li>');
-		menuul.append('<li><label><input type="radio" name="viewmode" value="panel" autocomplete="off" />read panel by panel</label></li>');
+		menuul.append('<li><label><input type="radio" name="viewmode" value="page"  autocomplete="off" />Page</label></li>');
+		menuul.append('<li><label><input type="radio" name="viewmode" value="panel" autocomplete="off" />Panel</label></li>');
 		menu.append(menuul);
+		
+		var btn_debug = $('<label><input type="checkbox" class="toggleDebug" autocomplete="off" />Show panels</label>');
+		if (this.debug)
+			btn_debug.children('.toggleDebug').prop('checked',true);
+		btn_debug.children('.toggleDebug').on('change', function () {
+			_reader.gui.toggleClass('debug');
+			_reader.setHashInfo({'debug': _reader.gui.hasClass('debug') ? '' : null});
+		});
+		menuul.append(btn_debug);
+		
+		menuul.append('<i class="exit">X</i>');
+		menuul.children('.exit').on('click touch', function () { _reader.showMenu(false); })
+		
+		menuul.append(' \
+			<li>---</li> \
+			<li class="kbd"><span>click/tap</span><span>next page/panel</span></li> \
+			<li class="kbd"><span>right/down</span><span>next page/panel</span></li> \
+			<li class="kbd"><span>left/up</span><span>previous page/panel</span></li> \
+			<li class="kbd"><span>p</span><span>switch page/panel view</span></li> \
+			<li class="kbd"><span>m</span><span>show this menu</span></li> \
+			<li class="kbd"><span>d</span><span>debug (show panels)</span></li> \
+		');
+		
 		this.gui.append(menu);
 		this.showMenu(false);
 		
-		var _reader = this;
 		$(document).ready( function () {
 			var mode = _reader.debug ? 'page' : 'panel';
 			$('input[name=viewmode][value='+mode+']',  _reader.gui).prop('checked',true).change();
@@ -278,14 +348,12 @@ class Reader {
 	
 	showMenu(show=true)
 	{
-		if (show)
-			this.gui.children('.menu').show();
-		else
-			this.gui.children('.menu').hide();
-	}
-	toggleMenu()
-	{
-		this.showMenu(!this.gui.children('.menu').is(':visible'));
+		var menu = this.gui.children('.menu');
+		
+		if (show == 'toggle')
+			show = !menu.is(':visible');
+		
+		show ? menu.show() : menu.hide();
 	}
 }
 
@@ -309,18 +377,13 @@ $(document).delegate( 'input[name=viewmode]', 'change', function () {
 
 // Next panel on simple click
 $(document).delegate( '.kumiko-reader', 'click touch', function (e) {
-	$(this).data('reader').next();
+	if ($(e.target).is('.panel,.kumiko-reader'))
+		$(this).data('reader').next();
 });
 
 // Prevent click on page when clicking on license links
 $(document).delegate( '.license a', 'click touch', function (e) {
 	e.stopPropagation();
-});
-
-
-// Show menu on double click
-$(document).delegate( '.kumiko-reader', 'dblclick', function (e) {
-	$(this).data('reader').showMenu();
 });
 
 
@@ -332,49 +395,30 @@ $(document).keydown(function(e) {
 	
 	switch(e.which) {
 		case 37: // left
+		case 38: // up
 			reader.prev();
 			break;
 			
 		case 39: // right
+		case 40: // down
 			reader.next();
+			break;
+		
+		case 68: // 'd' debug (show panels)
+			var d = $('input.toggleDebug');
+			d.prop('checked',!d.is(':checked')).change();
+			break;
+		
+		case 77: // 'm' key: toggle menu
+			reader.showMenu('toggle');
 			break;
 		
 		case 80: // 'p' key: switch between page and panel reading
 			$('input[name=viewmode]:not(:checked)').prop('checked',true).change();
 			break;
 		
-		case 77: // 'm' key: show/hide menu
-			reader.toggleMenu();
-			break;
-		
 		default:
 			return; // exit this handler for other keys
 	}
 	e.preventDefault();
-});
-
-
-/**** MOBILE NAVIGATION ****/
-
-// Navigate on swipe left/right, show menu on tap hold
-$(function() {
-	$('.kumiko-reader').swipe({
-		swipe: function(event, direction, distance, duration, fingerCount, fingerData)
-		{
-			switch (direction)
-			{
-				case 'left':
-					$(this).data('reader').prev();
-					break;
-				case 'right':
-					$(this).data('reader').next();
-					break;
-			}
-		},
-		hold: function(event, target)
-		{
-			$(this).data('reader').showMenu();
-		}
-	});
-	$('.kumiko-reader').swipe( {fingers:2} );
 });

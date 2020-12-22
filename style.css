@@ -6,6 +6,7 @@ body {
 	height: 96vh;
 	margin-top: 2vh;
 	margin-left: 2vw;
+	font-family: sans-serif;
 }
 
 ul {
@@ -28,26 +29,72 @@ ul {
 	position: relative;
 }
 
-.kumiko-reader > *:not(.container) {
+.pagenb, .burger, .prev, .menu > ul {
 	z-index: 20;
-	padding: 0.3em 0.5em;
+	padding: 0.1em 0.4em;
 	background-color: #34495e;
-	opacity: 0.9;
 	color: #ecf0f1;
 	font-weight: bold;
 }
 
 .menu {
 	position: absolute;
-	bottom: 0;
+	top: 0;
 	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+.menu ul {
+	display: flex;
+	flex-direction: column;
+	border: 2px solid #ecf0f1;
+	border-radius: 5px;
+	padding: 2em;
+	font-size: 150%;
+	position: relative;
+}
+.menu .kbd { font-size: 80%; display: flex; justify-content: space-between;}
+.menu .kbd span:nth-child(1) { color: #bdc3c7; margin-right: 1em; }
+.menu .exit {
+	position: absolute;
+	right: 1vmin;
+	top: 1vmin;
+	font-style: normal;
 }
 
+/* Fading corner icons/infos */
+.prev {
+	position: absolute;
+	top: 0;
+	left: 0;
+	font-size: 6vmin;
+	font-style: normal;
+}
+.burger {
+	position: absolute;
+	top: 0;
+	right: 0;
+	font-size: 6vmin;
+	font-style: normal;
+}
 .pagenb {
 	position: absolute;
 	bottom: 0;
 	right: 0;
 }
+.prev, .burger, .pagenb {
+	transition-property: opacity;
+	transition-duration: 2s;
+	opacity: 0.1;
+}
+.prev:active, .burger:active, .pagenb:active {
+	transition-duration: 0s;
+	opacity: 1;
+}
+
 
 .license {
 	position: absolute;

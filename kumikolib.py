@@ -11,6 +11,9 @@ from lib.panel import Panel
 
 
 
+class NotAnImageException (Exception):
+	pass
+
 class Kumiko:
 	
 	img = False
@@ -19,8 +22,11 @@ class Kumiko:
 		if options is None:
 		    options = {}
 		
-		self.options['debug_dir'] = 'debug_dir' in options and options['debug_dir']
-		self.options['progress']  = 'progress'  in options and options['progress']
+		for o in ['debug_dir','progress','rtl']:
+			self.options[o] = o in options and options[o]
+		
+		if self.options['rtl']:
+			Panel.set_numbering('rtl')
 		
 		self.options['min_panel_size_ratio'] = 1/15
 		if 'min_panel_size_ratio' in options and options['min_panel_size_ratio']:
@@ -28,16 +34,25 @@ class Kumiko:
 	
 	
 	def parse_url_list(self,urls):
+		if self.options['progress']:
+			print(len(urls),'files to download')
+		
 		tempdir = tempfile.TemporaryDirectory()
 		i = 0
+		nbdigits = len(str(len(urls)))
 		for url in urls:
+			filename = 'img'+('0' * nbdigits + str(i))[-nbdigits:]
+			
+			if self.options['progress']:
+				print('\t',url, (' -> '+filename) if urls else '')
+			
 			i += 1
 			parts = urlparse(url)
 			if not parts.netloc or not parts.path:
 				continue
 			
 			r = requests.get(url)
-			with open(os.path.join(tempdir.name,'img'+str(i)), 'wb') as f:
+			with open(os.path.join(tempdir.name,filename), 'wb') as f:
 				f.write(r.content)
 		
 		return self.parse_dir(tempdir.name,urls=urls)
@@ -60,70 +75,40 @@ class Kumiko:
 		infos = []
 		
 		if self.options['progress']:
-			print(len(filenames),'files')
+			print(len(filenames),'files to cut panels for')
 		
 		i = -1
-		for filename in filenames:
+		for filename in sorted(filenames):
 			i += 1
 			if self.options['progress']:
 				print("\t",urls[i] if urls else filename)
 			
 			try:
 				infos.append(self.parse_image(filename,url=urls[i] if urls else None))
-			except Exception:
+			except NotAnImageException:
 				print("Not an image, will be ignored: {}".format(filename), file=sys.stderr) 
 				pass  # this file is not an image, will not be part of the results
 		
 		return infos
 	
 	
-	def dots_are_close(self,dot1,dot2):
-		max_dist = self.gutterThreshold * 2
-		return abs(dot1[0]-dot2[0]) < max_dist and abs(dot1[1]-dot2[1]) < max_dist
-	
-	
-	def split_polygon(self,polygon):
-		
-		close_dots = []
-		for i in range(len(polygon)-1):
-			all_close = True
-			for j in range(i+1,len(polygon)):
-				dot1 = polygon[i][0]
-				dot2 = polygon[j][0]
+	subpanel_colours = [(0,255,0),(255,0,0),(200,200,0),(200,0,200),(0,200,200),(150,150,150)]
+	def split_panels(self,panels,img,contourSize):
+		new_panels = []
+		old_panels = []
+		for p in panels:
+			new = p.split()
+			if new != None:
+				old_panels.append(p)
+				new_panels += new
 				
-				if self.dots_are_close(dot1,dot2):
-					if not all_close:	
-						close_dots.append([i,j])
-				else:
-					all_close = False
+				if self.options['debug_dir']:
+					for i in range(len(new)):
+						cv.drawContours(img, [new[n].polygon], 0, self.subpanel_colours[i % len(self.subpanel_colours)], contourSize)
 		
-		if len(close_dots) == 0:
-			return [polygon]
-		
-		# take the dots that shouldn't be close, i.e. those with the most hops in between (other dots)
-		best_cut = max(close_dots, key=lambda i: abs(i[1]-i[0]) % (len(polygon)-1))
-		# NOTE: The first (i=0) and last dots are connected. There's at most len(polygon)-1 hops between two dots
-		
-		poly1len = len(polygon) - best_cut[1] + best_cut[0]
-		poly2len = best_cut[1] - best_cut[0]
-		
-		# A panel should have at least three edges
-		if min(poly1len,poly2len) <= 2:
-			return [polygon]
-		
-		poly1 = np.zeros(shape=(poly1len,1,2), dtype=int)
-		poly2 = np.zeros(shape=(poly2len,1,2), dtype=int)
-		
-		x = y = 0
-		for i in range(len(polygon)):
-			if i <= best_cut[0] or i > best_cut[1]:
-				poly1[x][0] = polygon[i]
-				x += 1
-			else:
-				poly2[y][0] = polygon[i]
-				y += 1
-		
-		return [poly1,poly2]  # TODO: recurse?
+		for p in old_panels:
+			panels.remove(p)
+		panels += new_panels
 	
 	
 	def deoverlap_panels(self,panels):
@@ -203,22 +188,17 @@ class Kumiko:
 						setattr(panels[i],d,newcoord)
 	
 	
-	def getGutterThreshold(size):
-		return sum(size) / 2 / 20
-	
-	
 	def parse_image(self,filename,url=None):
 		img = cv.imread(filename)
 		if not isinstance(img,np.ndarray) or img.size == 0:
-			raise Exception('File {} is not an image'.format(filename))
+			raise NotAnImageException('File {} is not an image'.format(filename))
 		
 		size = list(img.shape[:2])
 		size.reverse()  # get a [width,height] list
 		
 		infos = {
 			'filename': url if url else os.path.basename(filename),
-			'size': size,
-			'panels': []
+			'size': size
 		}
 		
 		# get license for this file
@@ -230,8 +210,6 @@ class Kumiko:
 					print('License file {} is not a valid JSON file'.format(filename+'.license'))
 					sys.exit(1)
 		
-		self.gutterThreshold = Kumiko.getGutterThreshold(infos['size'])
-		
 		gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
 		
 		tmin = 220
@@ -242,50 +220,51 @@ class Kumiko:
 		contours, hierarchy = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
 		
 		# Get (square) panels out of contours
+		contourSize = int(sum(infos['size']) / 2 * 0.004)
+		panels = []
 		for contour in contours:
 			arclength = cv.arcLength(contour,True)
-			epsilon = 0.01 * arclength
+			epsilon = 0.001 * arclength
 			approx = cv.approxPolyDP(contour,epsilon,True)
 			
-			# See if this panel can be cut into several (two non-consecutive points are close)
-			polygons = self.split_polygon(approx)
 			
-			i = -1
-			for p in polygons:
-				i += 1
-				x,y,w,h = cv.boundingRect(p)
-				
-				# exclude very small panels
-				if w < infos['size'][0] * self.options['min_panel_size_ratio'] or h < infos['size'][1] * self.options['min_panel_size_ratio']:
-					continue
-				
-				if self.options['debug_dir']:
-					contourSize = int(sum(infos['size']) / 2 * 0.004)
-					if len(polygons) == 1:
-						cv.drawContours(img, [p], 0, (0,0,255), contourSize)
-					else:
-						cv.drawContours(img, [p], 0, [(0,255,0),(255,0,0)][i], contourSize)
-				
-				panel = Panel([x,y,w,h], self.gutterThreshold)
-				infos['panels'].append(panel)
+			panel = Panel(polygon=approx)
+			
+			# exclude very small panels
+			if panel.w < infos['size'][0] * self.options['min_panel_size_ratio'] or panel.h < infos['size'][1] * self.options['min_panel_size_ratio']:
+				continue
+			
+			if self.options['debug_dir']:
+				cv.drawContours(img, [approx], 0, (0,0,255), contourSize)
+			
+			panels.append(Panel(polygon=approx))
 		
-		# merge panels that shouldn't have been split (speech bubble diving in a panel)
-		self.merge_panels(infos['panels'])
+		# See if panels can be cut into several (two non-consecutive points are close)
+		self.split_panels(panels,img,contourSize)
 		
-		# cutting polygons may result in panels slightly overlapping, de-overlap them
-		self.deoverlap_panels(infos['panels'])
+		# Merge panels that shouldn't have been split (speech bubble diving in a panel)
+		self.merge_panels(panels)
 		
-		infos['panels'].sort()  # TODO: remove
-		self.expand_panels(infos['panels'])
+		# splitting polygons may result in panels slightly overlapping, de-overlap them
+		self.deoverlap_panels(panels)
 		
-		if len(infos['panels']) == 0:
-			infos['panels'].append( Panel([0,0,infos['size'][0],infos['size'][1]], self.gutterThreshold) );
+		# get actual gutters before expanding panels
+		actual_gutters = Kumiko.actual_gutters(panels)
+		infos['gutters'] = [actual_gutters['x'],actual_gutters['y']]
 		
-		# Number infos['panels'] comics-wise (left to right for now)
-		infos['panels'].sort()
+		panels.sort()  # TODO: remove
+		self.expand_panels(panels)
+		
+		if len(panels) == 0:
+			panels.append( Panel([0,0,infos['size'][0],infos['size'][1]]) );
+		
+		# Number panels comics-wise (left to right for now)
+		panels.sort()
 		
 		# Simplify panels back to lists (x,y,w,h)
-		infos['panels'] = list(map(lambda p: p.to_xywh(), infos['panels']))
+		panels = list(map(lambda p: p.to_xywh(), panels))
+		
+		infos['panels'] = panels
 		
 		# write panel numbers on debug image
 		if (self.options['debug_dir']):

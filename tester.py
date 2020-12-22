@@ -12,8 +12,8 @@ class Tester:
 	files = []
 	git_repo = 'https://framagit.org/nicooo/kumiko'
 	git_versions = [
-		# 'v1.0', 'v1.1', 'v1.11',
-		'v1.2',
+		# 'v1.0', 'v1.1', 'v1.1.1', 'v1.2',
+		'v1.2.1',
 		'current',
 	]
 	
@@ -65,11 +65,9 @@ class Tester:
 			
 			print("##### Kumiko-cutting",f if isinstance(f,str) else f.name,"#####")
 			
-			f_savedir = os.path.join(self.savedir,git_version,os.path.basename(f))
-			subprocess.run(['mkdir','-p',f_savedir])
-			
+			subprocess.run(['mkdir','-p',os.path.join(self.savedir,git_version)])
 			jsonfile = os.path.join(self.savedir,git_version,os.path.basename(f)+'.json')
-			subprocess.run(args=[kumiko_bin, '-i', f, '-o', jsonfile, '--debug-dir', f_savedir, '--progress'])
+			subprocess.run(args=[kumiko_bin, '-i', f, '-o', jsonfile, '--progress'])
 			
 			if tmpfolder and os.path.isdir(f):
 				for g in os.scandir(tmpfolder.name):
@@ -108,9 +106,8 @@ class Tester:
 						print('error, image sizes are not the same',json1[p]['size'],json2[p]['size'])
 						continue
 					
-					gutterThreshold = Kumiko.getGutterThreshold(json1[p]['size'])
-					panels_v1 = list(map(lambda p: Panel(p, gutterThreshold/2), json1[p]['panels']))
-					panels_v2 = list(map(lambda p: Panel(p, gutterThreshold/2), json2[p]['panels']))
+					panels_v1 = list(map(lambda p: Panel(p), json1[p]['panels']))
+					panels_v2 = list(map(lambda p: Panel(p), json2[p]['panels']))
 					
 					known_panels = [[],[]]
 					j = -1
