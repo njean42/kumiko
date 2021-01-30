@@ -203,6 +203,9 @@ class Panel:
 			area1 = cv.contourArea(poly1)
 			area2 = cv.contourArea(poly2)
 			
+			if max(area1,area2) == 0:
+				continue
+			
 			areaRatio = min(area1,area2) / max(area1,area2)
 			if areaRatio < 0.1:
 				continue
