@@ -84,6 +84,30 @@ class Kumiko:
 		return infos
 	
 	
+	def get_contours(self,gray,filename,bgcol):
+		
+		thresh = None
+		contours = None
+		
+		# White background: values below 220 will be black, the rest white
+		if bgcol == 'white':
+			ret,thresh = cv.threshold(gray,220,255,cv.THRESH_BINARY_INV)
+			contours, hierarchy = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
+		
+		elif bgcol == 'black':
+			# Black background: values above 25 will be black, the rest white
+			ret,thresh = cv.threshold(gray,25,255,cv.THRESH_BINARY)
+			contours, hierarchy = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
+		
+		else:
+			raise Exception('Fatal error, unknown background color: '+str(bgcol)) 
+		
+		if self.options['debug_dir']:
+			cv.imwrite(os.path.join(self.options['debug_dir'],os.path.basename(filename)+'-020-thresh[{}].jpg'.format(bgcol)),thresh)
+		
+		return contours
+	
+	
 	subpanel_colours = [(0,255,0),(255,0,0),(200,200,0),(200,0,200),(0,200,200),(150,150,150)]
 	def split_panels(self,panels,img,contourSize):
 		new_panels = []
@@ -96,7 +120,7 @@ class Kumiko:
 				
 				if self.options['debug_dir']:
 					for i in range(len(new)):
-						cv.drawContours(img, [new[n].polygon], 0, self.subpanel_colours[i % len(self.subpanel_colours)], contourSize)
+						cv.drawContours(img, [new[i].polygon], 0, self.subpanel_colours[i % len(self.subpanel_colours)], contourSize)
 		
 		for p in old_panels:
 			panels.remove(p)
@@ -181,11 +205,11 @@ class Kumiko:
 	
 	
 	def parse_image(self,filename,url=None):
-		img = cv.imread(filename)
-		if not isinstance(img,np.ndarray) or img.size == 0:
+		self.img = cv.imread(filename)
+		if not isinstance(self.img,np.ndarray) or self.img.size == 0:
 			raise NotAnImageException('File {} is not an image'.format(filename))
 		
-		size = list(img.shape[:2])
+		size = list(self.img.shape[:2])
 		size.reverse()  # get a [width,height] list
 		
 		infos = {
@@ -202,14 +226,20 @@ class Kumiko:
 					print('License file {} is not a valid JSON file'.format(filename+'.license'))
 					sys.exit(1)
 		
-		gray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
+		self.gray = cv.cvtColor(self.img,cv.COLOR_BGR2GRAY)
 		
-		tmin = 220
-		tmax = 255
-		ret,thresh = cv.threshold(gray,tmin,tmax,cv.THRESH_BINARY_INV)
+		for bgcol in ['white','black']:
+			res = self.parse_image_with_bgcol(infos.copy(),filename,bgcol,url)
+			if len(res['panels']) > 1:
+				return res
 		
-		contours = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-		contours, hierarchy = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
+		return res
+		
+		
+	def parse_image_with_bgcol(self,infos,filename,bgcol,url=None):
+		
+		contours = self.get_contours(self.gray,filename,bgcol)
+		infos['background'] = bgcol
 		
 		# Get (square) panels out of contours
 		contourSize = int(sum(infos['size']) / 2 * 0.004)
@@ -219,7 +249,6 @@ class Kumiko:
 			epsilon = 0.001 * arclength
 			approx = cv.approxPolyDP(contour,epsilon,True)
 			
-			
 			panel = Panel(polygon=approx)
 			
 			# exclude very small panels
@@ -227,12 +256,12 @@ class Kumiko:
 				continue
 			
 			if self.options['debug_dir']:
-				cv.drawContours(img, [approx], 0, (0,0,255), contourSize)
+				cv.drawContours(self.img, [approx], 0, (0,0,255), contourSize)
 			
 			panels.append(Panel(polygon=approx))
 		
 		# See if panels can be cut into several (two non-consecutive points are close)
-		self.split_panels(panels,img,contourSize)
+		self.split_panels(panels,self.img,contourSize)
 		
 		# Merge panels that shouldn't have been split (speech bubble diving in a panel)
 		self.merge_panels(panels)
@@ -259,7 +288,8 @@ class Kumiko:
 		infos['panels'] = panels
 		
 		# write panel numbers on debug image
-		if (self.options['debug_dir']):
-			cv.imwrite(os.path.join(self.options['debug_dir'],os.path.basename(filename)+'-contours.jpg'),img)
+		if self.options['debug_dir']:
+			cv.imwrite(os.path.join(self.options['debug_dir'],os.path.basename(filename)+'-010-gray.jpg'),self.gray)
+			cv.imwrite(os.path.join(self.options['debug_dir'],os.path.basename(filename)+'-040-contours.jpg'),self.img)
 		
 		return infos
