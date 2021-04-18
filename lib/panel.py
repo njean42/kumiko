@@ -7,6 +7,8 @@ import numpy as np
 
 class Panel:
 	
+	img_size = None
+	small_panel_ratio = None
 	numbering = 'ltr'  # left-to-right by default
 	
 	def set_numbering(numbering):
@@ -14,7 +16,14 @@ class Panel:
 			raise Exception('Fatal error, unknown numbering: '+str(numbering))
 		Panel.numbering = numbering
 	
+	
 	def __init__(self, xywh=None, polygon=None):
+		if Panel.img_size is None:
+			raise Exception("Fatal error: Panel.img_size hasn't been set")
+		
+		if Panel.small_panel_ratio is None:
+			raise Exception("Fatal error: Panel.small_panel_ratio hasn't been set")
+		
 		if xywh is None and polygon is None:
 			raise Exception('Fatal error: no parameter to define Panel boundaries')
 		
@@ -64,6 +73,7 @@ class Panel:
 	def area(self): return self.w * self.h
 	
 	def __str__(self): return "[left: {}, right: {}, top: {}, bottom: {} ({}x{})]".format(self.x,self.r,self.y,self.b,self.w,self.h)
+	def __hash__(self): return hash(self.__str__())
 	
 	def __setattr__(self,name,value):
 		if name in ['w','h','wt','ht']:
@@ -76,6 +86,11 @@ class Panel:
 			super().__setattr__('wt',self.w / 10)     # wt = width threshold (under which two edge coordinates are considered equal)
 			super().__setattr__('h',self.b - self.y)
 			super().__setattr__('ht',self.h / 10)     # ht = height threshold
+	
+	
+	def is_small(self):
+		return self.w < Panel.img_size[0] * Panel.small_panel_ratio or \
+		       self.h < Panel.img_size[1] * Panel.small_panel_ratio
 	
 	
 	def overlap_panel(self,other):
@@ -98,8 +113,8 @@ class Panel:
 		if not o_panel:
 			return False
 		
-		# self contains other if their overlapping area is more than 75% of other's area
-		return o_panel.area() / other.area() > 0.75 
+		# self contains other if their overlapping area is more than 50% of other's area
+		return o_panel.area() / other.area() > 0.50
 	
 	
 	def same_row(self,other): return other.y <= self.y <= other.b or self.y <= other.y <= self.b
@@ -135,9 +150,23 @@ class Panel:
 		}[d](panels)
 	
 	
+	def merge(p1,p2):
+		min_x = min(p1.x, p2.x)
+		min_y = min(p1.y, p2.y)
+		max_r = max(p1.r, p2.r)
+		max_b = max(p1.b, p2.b)
+		return Panel([min_x, min_y, max_r - min_x, max_b - min_y])
+	
+	
+	def is_close(self, other):
+		bounding_box = Panel.merge(self,other)
+		return (self.w + other.w)*2 > bounding_box.w and \
+		       (self.h + other.h)*2 > bounding_box.h
+	
+	
 	def split(self):
 		if self.polygon is None:
-			raise Exception('Fatal error, trying to split a Panel with no polygon (not the result of opencv.findContours)')
+			return None
 		
 		close_dots = []
 		for i in range(len(self.polygon)-1):

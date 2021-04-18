@@ -12,8 +12,8 @@ class Tester:
 	files = []
 	git_repo = 'https://framagit.org/nicooo/kumiko'
 	git_versions = [
-		# 'v1.0', 'v1.1', 'v1.1.1', 'v1.2',
-		'v1.2.1',
+		# 'v1.0', 'v1.1', 'v1.1.1', 'v1.2', 'v1.2.1',
+		'v1.3',
 		'current',
 	]
 	
@@ -41,7 +41,7 @@ class Tester:
 	
 	
 	def run(self, git_version):
-		print('\n########## Finding speech bubbles with kumiko version',git_version,'##########')
+		print('\n########## Finding panels with kumiko version',git_version,'##########')
 		kumiko_bin = './kumiko'
 		
 		# Kumiko would not accept non-image files before v1.2, special case for .licence files
@@ -105,6 +105,9 @@ class Tester:
 					if json1[p]['size'] != json2[p]['size']:
 						print('error, image sizes are not the same',json1[p]['size'],json2[p]['size'])
 						continue
+					
+					Panel.img_size = json1[p]['size']
+					Panel.small_panel_ratio = Kumiko.DEFAULT_MIN_PANEL_SIZE_RATIO
 					
 					panels_v1 = list(map(lambda p: Panel(p), json1[p]['panels']))
 					panels_v2 = list(map(lambda p: Panel(p), json2[p]['panels']))

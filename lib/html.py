@@ -14,7 +14,7 @@ class HTML:
 	<script type="text/javascript" src="{reldir}reader.js"></script>
 	<link rel="stylesheet" media="all" href="{reldir}style.css" />
 	<style type="text/css">
-		h2 {{ text-align: center; }}
+		h2 {{ text-align: center; margin-top: 3em; }}
 		.sidebyside {{ display: flex; justify-content: space-around; }}
 		.sidebyside > div {{ width: 45%; }}
 		.version {{ text-align: center; }}
