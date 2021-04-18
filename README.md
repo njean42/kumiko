@@ -81,8 +81,8 @@ Here is an example of how *Kumiko* is going to number panels by default (numbers
 
 # Limitations
 
-For now, *Kumiko* only deals with **white-ish backgrounds**.
-Panels within a comic page will be any "object" that has non-white boundaries (not necessarily vertical or horizontal lines).
+For now, *Kumiko* only deals with clear (white-ish) and dark (black-ish) backgrounds.
+Panels within a comic page will be any "object" that has non-white & non-black boundaries (not necessarily vertical or horizontal lines).
 
 If you have ideas on how to programmatically guess the background color of a page, please let us know!
 
@@ -93,7 +93,11 @@ If you have ideas on how to programmatically guess the background color of a pag
 
 ## Kumiko library
 
-* be able to detect panel contours on pages with **non-white background**
+* detect panels on a growing range of comic page layouts
+	* detect non-framed panels (without clear boundaries/borders)
+	* separate intertwined panels
+
+* be able to detect panel contours on pages with non-white, non-black background
 	* implies being able to determine the background color: histogram, probing of some kind? (worst case: manually?)
 
 
