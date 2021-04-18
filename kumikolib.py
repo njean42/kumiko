@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 
 import os, json, sys, tempfile, requests
@@ -7,6 +6,7 @@ import numpy as np
 from urllib.parse import urlparse
 
 from lib.panel import Panel
+from lib.debug import Debug
 
 
 
@@ -20,7 +20,9 @@ class Kumiko:
 	
 	def __init__(self,options={}):
 		
-		for o in ['debug_dir','progress','rtl']:
+		self.dbg = Debug(options['debug_dir'] if 'debug_dir' in options else False)
+		
+		for o in ['progress','rtl']:
 			self.options[o] = o in options and options[o]
 		
 		if self.options['rtl']:
@@ -102,13 +104,11 @@ class Kumiko:
 		else:
 			raise Exception('Fatal error, unknown background color: '+str(bgcol)) 
 		
-		if self.options['debug_dir']:
-			cv.imwrite(os.path.join(self.options['debug_dir'],os.path.basename(filename)+'-020-thresh[{}].jpg'.format(bgcol)),thresh)
+		self.dbg.write_image(thresh,filename+'-020-thresh[bg:{}].jpg'.format(bgcol))
 		
 		return contours
 	
 	
-	subpanel_colours = [(0,255,0),(255,0,0),(200,200,0),(200,0,200),(0,200,200),(150,150,150)]
 	def split_panels(self,panels,img,contourSize):
 		new_panels = []
 		old_panels = []
@@ -118,9 +118,7 @@ class Kumiko:
 				old_panels.append(p)
 				new_panels += new
 				
-				if self.options['debug_dir']:
-					for i in range(len(new)):
-						cv.drawContours(img, [new[i].polygon], 0, self.subpanel_colours[i % len(self.subpanel_colours)], contourSize)
+				self.dbg.write_contours(img, list(map(lambda n: n.polygon, new)), contourSize)
 		
 		for p in old_panels:
 			panels.remove(p)
@@ -255,8 +253,7 @@ class Kumiko:
 			if panel.w < infos['size'][0] * self.options['min_panel_size_ratio'] or panel.h < infos['size'][1] * self.options['min_panel_size_ratio']:
 				continue
 			
-			if self.options['debug_dir']:
-				cv.drawContours(self.img, [approx], 0, (0,0,255), contourSize)
+			self.dbg.write_contours(self.img, [approx], contourSize, colour=(0,0,255))
 			
 			panels.append(Panel(polygon=approx))
 		
@@ -288,8 +285,7 @@ class Kumiko:
 		infos['panels'] = panels
 		
 		# write panel numbers on debug image
-		if self.options['debug_dir']:
-			cv.imwrite(os.path.join(self.options['debug_dir'],os.path.basename(filename)+'-010-gray.jpg'),self.gray)
-			cv.imwrite(os.path.join(self.options['debug_dir'],os.path.basename(filename)+'-040-contours.jpg'),self.img)
+		self.dbg.write_image(self.gray, filename+'-010-gray.jpg')
+		self.dbg.write_image(self.img, filename+'-040-contours.jpg')
 		
 		return infos
