@@ -169,7 +169,7 @@ class Kumiko:
 		
 		for p in old_panels:
 			panels.remove(p)
-		panels += new_panels
+		panels += list(filter(lambda p: not p.is_small(), new_panels))
 	
 	
 	def deoverlap_panels(self,panels):
