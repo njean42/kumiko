@@ -1,6 +1,6 @@
 
 
-import os, json
+import os, json, copy
 import cv2 as cv
 
 from lib.html import HTML
@@ -19,7 +19,7 @@ class Debug:
 		'yellow':      (0,200,200),
 		'gray':        (150,150,150),
 	}
-	subpanel_colours = list(colours.values())[3:]  # white, red and green are used to display main and split panels
+	subpanel_colours = list(colours.values())[3:]  # white, red and green are used to display main panels
 	
 	
 	def __init__(self, debug):
@@ -36,7 +36,7 @@ class Debug:
 		
 		self.steps.append({
 			'name': name,
-			'panels': panels.copy()
+			'panels': copy.deepcopy(panels)
 		})
 	
 	
@@ -49,7 +49,7 @@ class Debug:
 		if len(self.steps) > 0:
 			currstep = list(reversed(self.steps))[0]['name']
 		
-		filename = str(Debug.imgID) + label+'.jpg'
+		filename = str(Debug.imgID) + '-' + label + '.jpg'
 		Debug.imgID += 1
 		cv.imwrite(os.path.join('tests/results',filename),img)
 		

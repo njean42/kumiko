@@ -172,7 +172,7 @@ class Kumiko:
 			panels.remove(p)
 		panels += new_panels
 		
-		self.dbg.add_image(self.img, 'Split contours')
+		self.dbg.add_image(self.img, 'Split contours (shown as non-red contours)')
 		self.dbg.add_step('Panels from split contours', panels)
 		
 		panels = list(filter(lambda p: not p.is_small(), panels))
@@ -318,6 +318,7 @@ class Kumiko:
 			
 			panels.append(Panel(polygon=approx))
 		
+		self.dbg.add_step('Initial state', [])
 		self.dbg.add_image(self.img, 'Initial contours')
 		self.dbg.add_step('Panels from initial contours', panels)
 		
