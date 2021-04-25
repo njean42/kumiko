@@ -2,7 +2,7 @@
 
 
 import os, subprocess, json, argparse, re, tempfile
-from kumikolib import Kumiko,Panel
+from kumikolib import Kumiko,Panel,Debug
 from lib.html import HTML
 
 
@@ -85,54 +85,18 @@ class Tester:
 			
 			files_diff = {}
 			
-			for f in self.files:
+			for file_or_dir in self.files:
 				
 				if len(files_diff) > 20:
 					print('The maximum number of differences in files (20) has been reached, stopping')
 					break
 				
-				with open(os.path.join(self.savedir,v1,os.path.basename(f)+'.json')) as fh:
+				with open(os.path.join(self.savedir,v1,os.path.basename(file_or_dir)+'.json')) as fh:
 					json1 = json.load(fh)
-				with open(os.path.join(self.savedir,v2,os.path.basename(f)+'.json')) as fh:
+				with open(os.path.join(self.savedir,v2,os.path.basename(file_or_dir)+'.json')) as fh:
 					json2 = json.load(fh)
 				
-				for p in range(len(json1)):  # for each page
-					
-					# check both images' filename and size, should be the same
-					if os.path.basename(json1[p]['filename']) != os.path.basename(json2[p]['filename']):
-						print('error, filenames are not the same',json1[p]['filename'],json2[p]['filename'])
-						continue
-					if json1[p]['size'] != json2[p]['size']:
-						print('error, image sizes are not the same',json1[p]['size'],json2[p]['size'])
-						continue
-					
-					Panel.img_size = json1[p]['size']
-					Panel.small_panel_ratio = Kumiko.DEFAULT_MIN_PANEL_SIZE_RATIO
-					
-					panels_v1 = list(map(lambda p: Panel(p), json1[p]['panels']))
-					panels_v2 = list(map(lambda p: Panel(p), json2[p]['panels']))
-					
-					known_panels = [[],[]]
-					j = -1
-					for p1 in panels_v1:
-						j += 1
-						if p1 in panels_v2:
-							known_panels[0].append(j)
-					j = -1
-					for p2 in panels_v2:
-						j += 1
-						if p2 in panels_v1:
-							known_panels[1].append(j)
-					
-					images_dir = f if os.path.isdir(f) else os.path.dirname(f)
-					images_dir = os.path.relpath(images_dir,'tests/results')+'/'
-					
-					if len(known_panels[0]) != len(panels_v1) or len(known_panels[1]) != len(panels_v2):
-						files_diff[json1[p]['filename']] = {
-							'jsons': [json.dumps([json1[p]]),json.dumps([json2[p]])],
-							'images_dir': images_dir,
-							'known_panels': [json.dumps(known_panels[0]),json.dumps(known_panels[1])]
-						}
+				files_diff.update(Debug.get_files_diff(file_or_dir,json1,json2))
 			
 			print('Found',len(files_diff),'differences')
 			

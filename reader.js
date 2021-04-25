@@ -117,6 +117,12 @@ class Reader {
 		$('.pagenb',this.gui).html('page '+(page+1)+' <small>/'+this.comic.length+'</small>')
 		
 		var imginfo = this.comic[page];
+		if (!this.gui.hasClass('fullpage'))
+			this.gui.css({
+				width: imginfo.size[0],
+				height: imginfo.size[1],
+				padding: '2em',
+			});
 		var imgurl = this.images_dir == 'urls' ? imginfo.filename : this.images_dir + imginfo.filename.split('/').reverse()[0];
 		
 		var img = $('<img class="pageimg" src="'+imgurl+'"/>');

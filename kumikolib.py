@@ -16,14 +16,12 @@ class NotAnImageException (Exception):
 
 class Kumiko:
 	
-	DEFAULT_MIN_PANEL_SIZE_RATIO  = 1/15
-	
 	options = {}
 	img = False
 	
 	def __init__(self,options={}):
 		
-		self.dbg = Debug(options['debug_dir'] if 'debug_dir' in options else False)
+		self.dbg = Debug('debug' in options and options['debug'])
 		
 		for o in ['progress','rtl']:
 			self.options[o] = o in options and options[o]
@@ -31,7 +29,7 @@ class Kumiko:
 		if self.options['rtl']:
 			Panel.set_numbering('rtl')
 		
-		self.options['min_panel_size_ratio'] = Kumiko.DEFAULT_MIN_PANEL_SIZE_RATIO
+		self.options['min_panel_size_ratio'] = Panel.DEFAULT_MIN_PANEL_SIZE_RATIO
 		if 'min_panel_size_ratio' in options and options['min_panel_size_ratio']:
 			self.options['min_panel_size_ratio'] = options['min_panel_size_ratio']
 	
@@ -107,12 +105,12 @@ class Kumiko:
 		else:
 			raise Exception('Fatal error, unknown background color: '+str(bgcol)) 
 		
-		self.dbg.write_image(thresh,filename+'-020-thresholded[bg:{}].jpg'.format(bgcol))
+		self.dbg.add_image(thresh,'Thresholded image, supposed {} background'.format(bgcol))
 		
 		return contours
 	
 	
-	def group_small_panels(self, panels, filename, contourSize):
+	def group_small_panels(self, panels, filename):
 		g = 0
 		groups = {}  # panel: groups for this panel
 		for p1 in panels:
@@ -146,17 +144,20 @@ class Kumiko:
 			if not merged_big_panel.is_small():
 				panels.add(merged_big_panel)
 				
-				tmp_img = self.dbg.draw_panels(self.img,panels_in_group,contourSize,Debug.colours['lightblue'])
-				tmp_img = self.dbg.draw_panels(tmp_img,[merged_big_panel],contourSize,Debug.colours['green'])
-				self.dbg.write_image(tmp_img, filename+'-035-merged-small-panels[group{}].jpg'.format(g))
+				tmp_img = self.dbg.draw_panels(self.img, panels_in_group,    Debug.colours['lightblue'])
+				tmp_img = self.dbg.draw_panels(tmp_img,  [merged_big_panel], Debug.colours['green'])
+				self.dbg.add_image(tmp_img, 'Group small panels')
 			
 			panels = panels - panels_in_group.keys()
 		
 		panels = list(filter(lambda p: not p.is_small(), panels))  # also remove small panels that were not part of groups
+		
+		self.dbg.add_step('Group small panels', panels)
+		
 		return panels
 	
 	
-	def split_panels(self,panels,contourSize):
+	def split_panels(self,panels):
 		new_panels = []
 		old_panels = []
 		for p in panels:
@@ -165,11 +166,18 @@ class Kumiko:
 				old_panels.append(p)
 				new_panels += new
 				
-				self.dbg.draw_contours(self.img, list(map(lambda n: n.polygon, new)), contourSize)
+				self.dbg.draw_contours(self.img, list(map(lambda n: n.polygon, new)))
 		
 		for p in old_panels:
 			panels.remove(p)
-		panels += list(filter(lambda p: not p.is_small(), new_panels))
+		panels += new_panels
+		
+		self.dbg.add_image(self.img, 'Split contours')
+		self.dbg.add_step('Panels from split contours', panels)
+		
+		panels = list(filter(lambda p: not p.is_small(), panels))
+		
+		self.dbg.add_step('Exclude small panels', panels)
 	
 	
 	def deoverlap_panels(self,panels):
@@ -189,6 +197,8 @@ class Kumiko:
 					panels[i].b = opanel.y
 					panels[j].y = opanel.b
 					continue
+		
+		self.dbg.add_step('Deoverlap panels', panels)
 	
 	
 	# Merge every two panels where one contains the other
@@ -205,6 +215,8 @@ class Kumiko:
 		
 		for i in reversed(sorted(list(set(panels_to_remove)))):
 			del panels[i]
+		
+		self.dbg.add_step('Merge panels', panels)
 	
 	
 	# Find out actual gutters between panels
@@ -229,7 +241,7 @@ class Kumiko:
 		}
 	
 	
-	# Expand panels to their neighbour's edge, or page frame
+	# Expand panels to their neighbour's edge, or page boundaries
 	def expand_panels(self, panels):
 		gutters = Kumiko.actual_gutters(panels)
 		for i in range(len(panels)):
@@ -249,6 +261,8 @@ class Kumiko:
 				if newcoord != -1:
 					if d in ['r','b'] and newcoord > getattr(panels[i],d) or d in ['x','y'] and newcoord < getattr(panels[i],d):
 						setattr(panels[i],d,newcoord)
+		
+		self.dbg.add_step('Expand panels', panels)
 	
 	
 	def parse_image(self,filename,url=None):
@@ -276,7 +290,7 @@ class Kumiko:
 					sys.exit(1)
 		
 		self.gray = cv.cvtColor(self.img,cv.COLOR_BGR2GRAY)
-		self.dbg.write_image(self.gray, filename+'-010-grayed.jpg')
+		self.dbg.add_image(self.gray,'Shades of gray')
 		
 		for bgcol in ['white','black']:
 			res = self.parse_image_with_bgcol(infos.copy(),filename,bgcol,url)
@@ -284,64 +298,56 @@ class Kumiko:
 				return res
 		
 		return res
-		
-		
+	
+	
 	def parse_image_with_bgcol(self,infos,filename,bgcol,url=None):
 		
 		contours = self.get_contours(self.gray,filename,bgcol)
 		infos['background'] = bgcol
+		self.dbg.infos = infos.copy()
 		
 		# Get (square) panels out of contours
-		contourSize = int(sum(infos['size']) / 2 * 0.004)
+		self.dbg.contourSize = int(sum(infos['size']) / 2 * 0.004)
 		panels = []
 		for contour in contours:
 			arclength = cv.arcLength(contour,True)
 			epsilon = 0.001 * arclength
 			approx = cv.approxPolyDP(contour,epsilon,True)
 			
-			self.dbg.draw_contours(self.img, [approx], contourSize, Debug.colours['red'])
+			self.dbg.draw_contours(self.img, [approx], Debug.colours['red'])
 			
 			panels.append(Panel(polygon=approx))
 		
-		self.dbg.write_image(self.img, filename+'-030-initial-contours.jpg')
+		self.dbg.add_image(self.img, 'Initial contours')
+		self.dbg.add_step('Panels from initial contours', panels)
 		
 		# Group small panels that are close together, into bigger ones
-		panels = self.group_small_panels(panels,filename, contourSize)
-		self.dbg.write_image(self.dbg.draw_panels(self.img,panels,contourSize,Debug.colours['green']), filename+'-040-merged-small-panels.jpg')
+		panels = self.group_small_panels(panels,filename)
 		
 		# See if panels can be cut into several (two non-consecutive points are close)
-		self.split_panels(panels,contourSize)
-		
-		self.dbg.write_image(self.dbg.draw_panels(self.img,panels,contourSize,Debug.colours['green']), filename+'-050-contours-split-panels.jpg')
+		self.split_panels(panels)
 		
 		# Merge panels that shouldn't have been split (speech bubble diving in a panel)
 		self.merge_panels(panels)
 		
-		self.dbg.write_image(self.dbg.draw_panels(self.img,panels,contourSize,Debug.colours['green']), filename+'-060-merged-all-panels.jpg')
-		
 		# splitting polygons may result in panels slightly overlapping, de-overlap them
 		self.deoverlap_panels(panels)
 		
-		self.dbg.write_image(self.dbg.draw_panels(self.img,panels,contourSize,Debug.colours['green']), filename+'-070-deoverlaped-panels.jpg')
-		
 		# re-filter out small panels
 		panels = list(filter(lambda p: not p.is_small(), panels))
-		
-		self.dbg.write_image(self.dbg.draw_panels(self.img,panels,contourSize,Debug.colours['green']), filename+'-080-excluded-small-panels.jpg')
+		self.dbg.add_step('Exclude small panels', panels)
 		
 		# get actual gutters before expanding panels
 		actual_gutters = Kumiko.actual_gutters(panels)
 		infos['gutters'] = [actual_gutters['x'],actual_gutters['y']]
 		
-		panels.sort()  # TODO: remove
+		panels.sort()  # TODO: remove when panels expansion is smarter
 		self.expand_panels(panels)
-		
-		self.dbg.write_image(self.dbg.draw_panels(self.img,panels,contourSize,Debug.colours['green']), filename+'-090-expanded-panels.jpg')
 		
 		if len(panels) == 0:
 			panels.append( Panel([0,0,infos['size'][0],infos['size'][1]]) );
 		
-		# Number panels comics-wise (left to right for now)
+		# Number panels comics-wise (ltr/rtl)
 		panels.sort()
 		
 		# Simplify panels back to lists (x,y,w,h)

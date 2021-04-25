@@ -7,6 +7,8 @@ import numpy as np
 
 class Panel:
 	
+	DEFAULT_MIN_PANEL_SIZE_RATIO  = 1/15
+	
 	img_size = None
 	small_panel_ratio = None
 	numbering = 'ltr'  # left-to-right by default

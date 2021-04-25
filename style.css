@@ -20,8 +20,6 @@ ul {
 
 .kumiko-reader {
 	z-index: 1;
-	height: 600px;
-	width:  600px;
 	cursor: pointer;
 	border: 1px dotted blue;
 	padding: 1px; /* make sure to see panel borders even for pages with no margin (e.g. xkcd) */
@@ -29,7 +27,7 @@ ul {
 	position: relative;
 }
 
-.pagenb, .burger, .prev, .menu > ul {
+.pagenb, .burger, .prev, .menu > ul, .license {
 	z-index: 20;
 	padding: 0.1em 0.4em;
 	background-color: #34495e;
@@ -101,7 +99,7 @@ ul {
 	bottom: 0;
 	right: 15%;
 }
-.license a {
+.license, .license a {
 	color: #ecf0f1;
 }
 
@@ -148,3 +146,15 @@ ul {
 .kumiko-reader.debug .container:not(.zoomed) .panel span.bottom  { position: absolute; bottom: 0; left: 45%; }
 .kumiko-reader.debug .container:not(.zoomed) .panel span.left    { position: absolute; left: 0;   top: 45%; }
 .kumiko-reader.debug .container:not(.zoomed) .panel span.right   { position: absolute; right: 0;  top: 45%; }
+
+
+/* Debug mode */
+.imgbox {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-around;
+}
+
+.imgbox > div { width: 25%; }
+.imgbox img   { width: 100%; border: 1px dotted gray; }
+.imgbox p { text-align: center;}

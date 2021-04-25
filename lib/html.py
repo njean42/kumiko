@@ -1,5 +1,7 @@
 
 
+import json
+
 
 class HTML:
 	def header(title='',reldir=''):
@@ -14,12 +16,12 @@ class HTML:
 	<script type="text/javascript" src="{reldir}reader.js"></script>
 	<link rel="stylesheet" media="all" href="{reldir}style.css" />
 	<style type="text/css">
-		h2 {{ text-align: center; margin-top: 3em; }}
+		h2, h3 {{ text-align: center; margin-top: 3em; }}
 		.sidebyside {{ display: flex; justify-content: space-around; }}
 		.sidebyside > div {{ width: 45%; }}
 		.version {{ text-align: center; }}
-		.kumiko-reader {{ height: 90vh; }}
-		.kumiko-reader.fullpage {{ height: 100%; width: 100%; }}
+		.kumiko-reader.halfwidth {{ max-width: 45%; }}
+		.kumiko-reader.fullpage {{ width: 100%; height: 100%; }}
 	</style>
 </head>
 
@@ -34,11 +36,11 @@ class HTML:
 	
 	
 	pageId = 0
-	def side_by_side_panels(img,jsons,v1,v2,images_dir,known_panels):
-		html = '<h2>{0}</h2><div class="sidebyside"><div class="version">{1}</div><div class="version">{2}</div></div><div class="sidebyside">'.format(img,v1,v2)
+	def side_by_side_panels(title,jsons,v1,v2,images_dir,known_panels):
+		html = '<h2>{0}</h2><div class="sidebyside"><div class="version">{1}</div><div class="version">{2}</div></div><div class="sidebyside">'.format(title,v1,v2)
 		
 		oneside = """
-			<div id="page{id}" class="kumiko-reader debug"></div>
+			<div id="page{id}" class="kumiko-reader halfwidth debug"></div>
 			<script type="text/javascript">
 				var reader = new Reader({{
 					container: $('#page{id}'),
@@ -52,11 +54,19 @@ class HTML:
 		i = -1
 		for js in jsons:
 			i += 1
-			html += oneside.format(id=HTML.pageId,json=js,images_dir=images_dir,known_panels=known_panels[i])
+			html += oneside.format(id=HTML.pageId,json=json.dumps(js),images_dir=images_dir,known_panels=known_panels[i])
 			HTML.pageId += 1
 		
 		html += '</div>'
 		return html
+	
+	
+	def imgbox(images):
+		html = "<h3>Debugging images</h3>\n<div class='imgbox'>\n";
+		for img in images:
+			html += "\t<div><p>{}</p><img src='{}' /></div>\n".format(img['label'],img['filename'])
+		
+		return html + "</div>\n\n"
 	
 	
 	def reader(js,images_dir):

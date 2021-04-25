@@ -40,7 +40,7 @@ The 4 values representing a panel are given in the following order: **[x,y,width
 Panels are sorted in left-to-right reading order by default.
 Add the `--rtl` option to have them sorted in right-to-left reading order (e.g. mangas).
 
-Note that, although Kumiko can detect panels with arbitrary shapes, it will return a rectangular bounding box for each one.
+Note that, although *Kumiko* can detect panels with arbitrary shapes, it will return a rectangular bounding box for each one.
 This is because in the end, many things are rectangular: image files, our screens to display them...
 We may want an option in the future to get more accurate polygons instead.
 
@@ -78,11 +78,9 @@ The image order is alphabetical, which is based on a commonly encountered *page0
 
 ## Debug
 
-You can pass `kumiko` a `--debug-dir /path/to/debug-info` parameter that tells you are craving debugging information.
+You can pass `kumiko` a `--debug` parameter that tells you are craving debugging information.
 
-This will create several images, for each page that Kumiko analysed, named `$filename-$step-$operation.jpg`.
-These files will be found in the `/path/to/debug-info` folder (should exist and be writable), and give an idea of all `$step`s *Kumiko* is taking to detect panels.
-Depending on the `$operation` performed right before creating this file, it will display contours and/or panels on each image.
+This will create an HTML file (add `-b firefox` to open it automatically) displaying the various processing steps *Kumiko* has taken, and the panels discovered, added, deleted or rearranged at each stage.
 
 
 ## License information
