@@ -11,11 +11,7 @@ class Tester:
 	
 	files = []
 	git_repo = 'https://framagit.org/nicooo/kumiko'
-	git_versions = [
-		# 'v1.0', 'v1.1', 'v1.1.1', 'v1.2', 'v1.2.1', 'v1.3',
-		'v1.4',
-		'current',
-	]
+	git_versions = ['v1.4.1', 'current']
 	
 	def __init__(self, options):
 		self.savedir = os.path.join('tests','results')
