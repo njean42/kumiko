@@ -161,9 +161,14 @@ class Panel:
 	
 	
 	def is_close(self, other):
-		bounding_box = Panel.merge(self,other)
-		return (self.w + other.w)*2 > bounding_box.w and \
-		       (self.h + other.h)*2 > bounding_box.h
+		c1x = self.x + self.w/2
+		c1y = self.y + self.h/2
+		c2x = other.x + other.w/2
+		c2y = other.y + other.h/2
+		
+		return \
+			abs(c1x-c2x) <= (self.w + other.w)*0.75 and \
+			abs(c1y-c2y) <= (self.h + other.h)*0.75
 	
 	
 	def split(self):

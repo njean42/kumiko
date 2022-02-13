@@ -63,7 +63,7 @@ class Tester:
 					if re.search('\.license$',g.name):
 						os.rename(g,os.path.join(tmpfolder.name,os.path.basename(g)))
 			
-			print("##### Kumiko-cutting",f if isinstance(f,str) else f.name,"#####")
+			print("##### Kumiko-cutting {0} ({1}) #####".format(f if isinstance(f,str) else f.name, git_version))
 			
 			subprocess.run(['mkdir','-p',os.path.join(self.savedir,git_version)])
 			jsonfile = os.path.join(self.savedir,git_version,os.path.basename(f)+'.json')

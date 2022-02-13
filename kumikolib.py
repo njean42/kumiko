@@ -111,46 +111,52 @@ class Kumiko:
 	
 	
 	def group_small_panels(self, panels, filename):
-		g = 0
-		groups = {}  # panel: groups for this panel
-		for p1 in panels:
+		i = 0
+		panels_to_add = []
+		while i < len(panels):
+			p1 = panels[i]
+			
 			if not p1.is_small():
+				i += 1
 				continue
 			
-			for p2 in panels:
-				if p2 == p1 or not p2.is_small():
+			# build up a group of panels that are close to one another
+			big_panel = p1
+			grouped = [i]
+			
+			for j in range(i+1, len(panels)):
+				p2 = panels[j]
+				
+				if j == i or not p2.is_small():
 					continue
 				
-				if p2.is_close(p1):
-					if not (p1 in groups): groups[p1] = set()
-					if not (p2 in groups): groups[p2] = set()
+				if p2.is_close(big_panel):
+					grouped.append(j)
 					
-					grps = groups[p1].union(groups[p2])
-					use_group = g
-					if len(grps) > 0:
-						use_group = min(grps)
-					else:
-						g += 1
-					
-					groups[p1].add(use_group)
-					groups[p2].add(use_group)
-		
-		panels = set(panels)
-		for g in range(g):
-			panels_in_group = {p:grps for (p,grps) in groups.items() if g in grps}  # "dictionary comprehension"
-			merged_big_panel = reduce(Panel.merge, panels_in_group.keys())
+					# build up bigger panel for current group
+					big_panel = Panel.merge(big_panel,p2)
 			
-			# add big panel and remove small ones
-			if not merged_big_panel.is_small():
-				panels.add(merged_big_panel)
+			if len(grouped) <= 1:
+				del panels[i]
+				continue  # continue from same index i, which is a new panel (previous panel at index i has just been removed)
+			
+			else:
+				# add new grouped panel, if not small
+				if not big_panel.is_small():
+					panels_to_add.append(big_panel)
+					
+					tmp_img = self.dbg.draw_panels(self.img, list(map(lambda k: panels[k], grouped)), Debug.colours['lightblue'])
+					tmp_img = self.dbg.draw_panels(tmp_img,  [big_panel], Debug.colours['green'])
+					self.dbg.add_image(tmp_img, 'Group small panels')
+			
+				# remove all panels in group
+				for k in reversed(grouped):
+					del panels[k]
 				
-				tmp_img = self.dbg.draw_panels(self.img, panels_in_group,    Debug.colours['lightblue'])
-				tmp_img = self.dbg.draw_panels(tmp_img,  [merged_big_panel], Debug.colours['green'])
-				self.dbg.add_image(tmp_img, 'Group small panels')
-			
-			panels = panels - panels_in_group.keys()
+			i += 1
 		
-		panels = list(filter(lambda p: not p.is_small(), panels))  # also remove small panels that were not part of groups
+		for p in panels_to_add:
+			panels.append(p)
 		
 		self.dbg.add_step('Group small panels', panels)
 		
