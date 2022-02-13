@@ -1,6 +1,6 @@
 
 
-import os, json, copy
+import os, json, copy, time
 import cv2 as cv
 
 from lib.html import HTML
@@ -26,6 +26,7 @@ class Debug:
 		self.debug = debug
 		self.contourSize = None
 		self.steps = []
+		self.time = time.time_ns()
 		self.images = {}
 		self.infos = {}
 	
@@ -34,8 +35,15 @@ class Debug:
 		if not self.debug:
 			return
 		
+		prev_time = self.time
+		self.time = time.time_ns()
+		
+		elapsed = self.time - prev_time
+		print("{0} -- time elapsed: {1:.2f}".format(name, elapsed/1000000000))
+		
 		self.steps.append({
 			'name': name,
+			'elapsed_since_last_step': elapsed,
 			'panels': copy.deepcopy(panels)
 		})
 	
@@ -66,9 +74,6 @@ class Debug:
 			j = i + 1
 			
 			# Display debug images
-			if i == 0:
-				html += HTML.imgbox(self.images['init'])
-			
 			if self.steps[i]['name'] in self.images:
 				html += HTML.imgbox(self.images[self.steps[i]['name']])
 			
@@ -88,6 +93,7 @@ class Debug:
 			for filename in files_diff:
 				html += HTML.side_by_side_panels(
 					step_name,
+					"took {0:.2f} seconds".format(self.steps[j]['elapsed_since_last_step']/pow(10,9)),
 					files_diff[filename]['jsons'],
 					'BEFORE - {} panels'.format(len(files_diff[filename]['jsons'][0][0]['panels'])),
 					'AFTER  - {} panels'.format(len(files_diff[filename]['jsons'][1][0]['panels'])),

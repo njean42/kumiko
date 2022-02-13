@@ -270,6 +270,9 @@ class Kumiko:
 		if not isinstance(self.img,np.ndarray) or self.img.size == 0:
 			raise NotAnImageException('File {} is not an image'.format(filename))
 		
+		self.dbg.add_step('Initial state', [])
+		self.dbg.add_image(self.img,'Input image')
+		
 		size = list(self.img.shape[:2])
 		size.reverse()  # get a [width,height] list
 		
@@ -318,7 +321,6 @@ class Kumiko:
 			
 			panels.append(Panel(polygon=approx))
 		
-		self.dbg.add_step('Initial state', [])
 		self.dbg.add_image(self.img, 'Initial contours')
 		self.dbg.add_step('Panels from initial contours', panels)
 		

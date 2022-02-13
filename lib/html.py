@@ -19,7 +19,7 @@ class HTML:
 		h2, h3 {{ text-align: center; margin-top: 3em; }}
 		.sidebyside {{ display: flex; justify-content: space-around; }}
 		.sidebyside > div {{ width: 45%; }}
-		.version {{ text-align: center; }}
+		.version, .step-info {{ text-align: center; }}
 		.kumiko-reader.halfwidth {{ max-width: 45%; }}
 		.kumiko-reader.fullpage {{ width: 100%; height: 100%; }}
 	</style>
@@ -36,8 +36,16 @@ class HTML:
 	
 	
 	pageId = 0
-	def side_by_side_panels(title,jsons,v1,v2,images_dir,known_panels):
-		html = '<h2>{0}</h2><div class="sidebyside"><div class="version">{1}</div><div class="version">{2}</div></div><div class="sidebyside">'.format(title,v1,v2)
+	def side_by_side_panels(title,step_info,jsons,v1,v2,images_dir,known_panels):
+		html = """
+			<h2>{0}</h2>
+			<p class="step-info">{1}</p>
+			<div class="sidebyside">
+				<div class="version">{2}</div>
+				<div class="version">{3}</div>
+			</div>
+			<div class="sidebyside">
+		""".format(title,step_info,v1,v2)
 		
 		oneside = """
 			<div id="page{id}" class="kumiko-reader halfwidth debug"></div>

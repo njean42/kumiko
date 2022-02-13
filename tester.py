@@ -112,7 +112,7 @@ class Tester:
 			diff_file.write(HTML.nbdiffs(files_diff))
 			
 			for img in files_diff:
-				diff_file.write(HTML.side_by_side_panels(img,files_diff[img]['jsons'],v1,v2,images_dir=files_diff[img]['images_dir'], known_panels=files_diff[img]['known_panels']))
+				diff_file.write(HTML.side_by_side_panels(img,'',files_diff[img]['jsons'],v1,v2,images_dir=files_diff[img]['images_dir'], known_panels=files_diff[img]['known_panels']))
 			
 			diff_file.write(HTML.footer)
 			diff_file.close()
