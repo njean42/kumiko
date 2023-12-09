@@ -22,70 +22,67 @@ class Debug:
 	subpanel_colours = list(colours.values())[3:]  # white, red and green are used to display main panels
 	
 	
-	def __init__(self, debug):
-		self.debug = debug
-		self.contourSize = None
-		self.steps = []
-		self.time = time.time_ns()
-		self.images = {}
-		self.infos = {}
+	debug = False
+	contourSize = None
+	steps = []
+	images = {}
+	time = time.time_ns()
 	
 	
-	def add_step(self, name, panels):
-		if not self.debug:
+	@staticmethod
+	def add_step(name, infos):
+		if not Debug.debug:
 			return
 		
-		prev_time = self.time
-		self.time = time.time_ns()
+		Debug.prev_time = Debug.time
+		Debug.time = time.time_ns()
 		
-		elapsed = self.time - prev_time
+		elapsed = Debug.time - Debug.prev_time
 		print("{0} -- time elapsed: {1:.2f}".format(name, elapsed/1000000000))
 		
-		self.steps.append({
+		Debug.steps.append({
 			'name': name,
 			'elapsed_since_last_step': elapsed,
-			'panels': copy.deepcopy(panels)
+			'infos': copy.deepcopy(infos),
 		})
 	
 	
 	imgID = 0
-	def add_image(self,img,label):
-		if not self.debug:
+	
+	@staticmethod
+	def add_image(img,label):
+		if not Debug.debug:
 			return
 		
 		currstep = 'init'
-		if len(self.steps) > 0:
-			currstep = list(reversed(self.steps))[0]['name']
+		if len(Debug.steps) > 0:
+			currstep = list(reversed(Debug.steps))[0]['name']
 		
 		filename = str(Debug.imgID) + '-' + label + '.jpg'
 		Debug.imgID += 1
 		cv.imwrite(os.path.join('tests/results',filename),img)
 		
-		if not(currstep in self.images):
-			self.images[currstep] = []
-		self.images[currstep].append({'filename': filename, 'label': label})
+		if not(currstep in Debug.images):
+			Debug.images[currstep] = []
+		Debug.images[currstep].append({'filename': filename, 'label': label})
 	
 	
-	def html(self, images_dir, reldir):
+	@staticmethod
+	def html(images_dir, reldir):
 		html = ''
 		html += HTML.header(title='Debugging - Kumiko processing steps', reldir=reldir)
 		
-		for i in range(len(self.steps)-1):
+		for i in range(len(Debug.steps)-1):
 			j = i + 1
 			
 			# Display debug images
-			if self.steps[i]['name'] in self.images:
-				html += HTML.imgbox(self.images[self.steps[i]['name']])
+			if Debug.steps[i]['name'] in Debug.images:
+				html += HTML.imgbox(Debug.images[Debug.steps[i]['name']])
 			
-			# Display panels diffs
-			self.infos['panels'] = list(map(lambda p: p.to_xywh(), self.steps[i]['panels']))
-			json1 = self.infos.copy()
-			self.infos['panels'] = list(map(lambda p: p.to_xywh(), self.steps[j]['panels']))
-			json2 = self.infos.copy()
+			# Display panels diffs			
+			files_diff = Debug.get_files_diff(images_dir, [Debug.steps[i]['infos']], [Debug.steps[j]['infos']])
 			
-			files_diff = Debug.get_files_diff(images_dir, [json1], [json2])
-			
-			step_name = str(i+1) + '. ' +self.steps[j]['name']
+			step_name = str(i+1) + '. ' +Debug.steps[j]['name']
 			
 			if len(files_diff) == 0:
 				html += "<h2>{} - no change</h2>".format(step_name);
@@ -93,7 +90,7 @@ class Debug:
 			for filename in files_diff:
 				html += HTML.side_by_side_panels(
 					step_name,
-					"took {0:.2f} seconds".format(self.steps[j]['elapsed_since_last_step']/pow(10,9)),
+					"took {0:.2f} seconds".format(Debug.steps[j]['elapsed_since_last_step']/pow(10,9)),
 					files_diff[filename]['jsons'],
 					'BEFORE - {} panels'.format(len(files_diff[filename]['jsons'][0][0]['panels'])),
 					'AFTER  - {} panels'.format(len(files_diff[filename]['jsons'][1][0]['panels'])),
@@ -106,6 +103,7 @@ class Debug:
 		return html
 	
 	
+	@staticmethod
 	def get_files_diff(file_or_dir,json1,json2):
 		files_diff = {}
 		
@@ -119,11 +117,8 @@ class Debug:
 				print('error, image sizes are not the same',json1[p]['size'],json2[p]['size'])
 				continue
 			
-			Panel.img_size = json1[p]['size']
-			Panel.small_panel_ratio = Panel.DEFAULT_MIN_PANEL_SIZE_RATIO
-			
-			panels_v1 = list(map(lambda p: Panel(p), json1[p]['panels']))
-			panels_v2 = list(map(lambda p: Panel(p), json2[p]['panels']))
+			panels_v1 = list(map(lambda p: Panel(None, p), json1[p]['panels']))
+			panels_v2 = list(map(lambda p: Panel(None, p), json2[p]['panels']))
 			
 			known_panels = [[],[]]
 			j = -1
@@ -162,32 +157,34 @@ class Debug:
 		return files_diff
 	
 	
-	def draw_contours(self, img, contours, colour='auto'):
-		if not self.debug:
+	@staticmethod
+	def draw_contours(img, contours, colour='auto'):
+		if not Debug.debug:
 			return
-		if self.contourSize is None:
+		if Debug.contourSize is None:
 			raise Exception("Fatal error, Debug.contourSize has not been defined");
 		
 		for i in range(len(contours)):
 			if colour == 'auto':
 				colour = Debug.subpanel_colours[i % len(Debug.subpanel_colours)]
 			
-			cv.drawContours(img, [contours[i]], 0, colour, self.contourSize)
+			cv.drawContours(img, [contours[i]], 0, colour, Debug.contourSize)
 	
 	
-	def draw_panels(self, img, panels, colour):
-		if not self.debug:
+	@staticmethod
+	def draw_panels(img, panels, colour):
+		if not Debug.debug:
 			return
-		if self.contourSize is None:
+		if Debug.contourSize is None:
 			raise Exception("Fatal error, Debug.contourSize has not been defined");
 		
 		img = img.copy()
 		
 		for p in panels:
-			cv.rectangle(img, (p.x,p.y), (p.r,p.b), colour, self.contourSize)
+			cv.rectangle(img, (p.x,p.y), (p.r,p.b), colour, Debug.contourSize)
 		
 		# + draw inner white border
 		for p in panels:
-			cv.rectangle(img, (p.x+self.contourSize,p.y+self.contourSize), (p.r-self.contourSize,p.b-self.contourSize), Debug.colours['white'], int(self.contourSize/2))
+			cv.rectangle(img, (p.x+Debug.contourSize,p.y+Debug.contourSize), (p.r-Debug.contourSize,p.b-Debug.contourSize), Debug.colours['white'], int(Debug.contourSize/2))
 		
 		return img

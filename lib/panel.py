@@ -7,25 +7,8 @@ import numpy as np
 
 class Panel:
 	
-	DEFAULT_MIN_PANEL_SIZE_RATIO  = 1/15
-	
-	img_size = None
-	small_panel_ratio = None
-	numbering = 'ltr'  # left-to-right by default
-	
-	@classmethod
-	def set_numbering(cls, numbering):
-		if not (numbering in ['ltr','rtl']):
-			raise Exception('Fatal error, unknown numbering: '+str(numbering))
-		Panel.numbering = numbering
-	
-	
-	def __init__(self, xywh=None, polygon=None):
-		if Panel.img_size is None:
-			raise Exception("Fatal error: Panel.img_size hasn't been set")
-		
-		if Panel.small_panel_ratio is None:
-			raise Exception("Fatal error: Panel.small_panel_ratio hasn't been set")
+	def __init__(self, page, xywh=None, polygon=None):
+		self.page = page
 		
 		if xywh is None and polygon is None:
 			raise Exception('Fatal error: no parameter to define Panel boundaries')
@@ -62,11 +45,11 @@ class Panel:
 		
 		# panel is left from other
 		if other.x >= self.r - self.wt and other.x >= self.x - self.wt:
-			return True if Panel.numbering == 'ltr' else False
+			return True if self.page.numbering == 'ltr' else False
 		
 		# panel is right from other
 		if self.x >= other.r - self.wt and self.x >= other.x - self.wt:
-			return False if Panel.numbering == 'ltr' else True
+			return False if self.page.numbering == 'ltr' else True
 		
 		return True  # should not happen, TODO: raise an exception?
 	
@@ -92,8 +75,8 @@ class Panel:
 	
 	
 	def is_small(self):
-		return self.w < Panel.img_size[0] * Panel.small_panel_ratio or \
-		       self.h < Panel.img_size[1] * Panel.small_panel_ratio
+		return self.w < self.page.img_size[0] * self.page.small_panel_ratio or \
+		       self.h < self.page.img_size[1] * self.page.small_panel_ratio
 	
 	
 	def overlap_panel(self,other):
@@ -108,7 +91,7 @@ class Panel:
 		r = min(self.r,other.r)
 		b = min(self.b,other.b)
 		
-		return Panel([x,y,r-x,b-y])
+		return Panel(self.page, [x,y,r-x,b-y])
 	
 	
 	def contains(self,other):
@@ -124,41 +107,42 @@ class Panel:
 	def same_col(self,other): return other.x <= self.x <= other.r or self.x <= other.x <= self.r
 	
 	
-	def find_top_panel(self,panels):
-		all_top = list(filter(lambda p: p.b <= self.y and p.same_col(self), panels))
+	def find_top_panel(self):
+		all_top = list(filter(lambda p: p.b <= self.y and p.same_col(self), self.page.panels))
 		return max(all_top, key=lambda p: p.b) if all_top else None
 	
 	
-	def find_left_panel(self,panels):
-		all_left = list(filter(lambda p: p.r <= self.x and p.same_row(self), panels))
+	def find_left_panel(self):
+		all_left = list(filter(lambda p: p.r <= self.x and p.same_row(self), self.page.panels))
 		return max(all_left, key=lambda p: p.r) if all_left else None
 	
 	
-	def find_bottom_panel(self,panels):
-		all_bottom = list(filter(lambda p: p.y >= self.b and p.same_col(self), panels))
+	def find_bottom_panel(self):
+		all_bottom = list(filter(lambda p: p.y >= self.b and p.same_col(self), self.page.panels))
 		return min(all_bottom, key=lambda p: p.y) if all_bottom else None
 	
 	
-	def find_right_panel(self,panels):
-		all_right = list(filter(lambda p: p.x >= self.r and p.same_row(self), panels))
+	def find_right_panel(self):
+		all_right = list(filter(lambda p: p.x >= self.r and p.same_row(self), self.page.panels))
 		return min(all_right, key=lambda p: p.x) if all_right else None
 	
 	
-	def find_neighbour_panel(self,d,panels):
+	def find_neighbour_panel(self,d):
 		return {
 			'x': self.find_left_panel,
 			'y': self.find_top_panel,
 			'r': self.find_right_panel,
 			'b': self.find_bottom_panel,
-		}[d](panels)
+		}[d]()
 	
 	
-	def merge(p1,p2):
+	@staticmethod
+	def merge(page,p1,p2):
 		min_x = min(p1.x, p2.x)
 		min_y = min(p1.y, p2.y)
 		max_r = max(p1.r, p2.r)
 		max_b = max(p1.b, p2.b)
-		return Panel([min_x, min_y, max_r - min_x, max_b - min_y])
+		return Panel(page, [min_x, min_y, max_r - min_x, max_b - min_y])
 	
 	
 	def is_close(self, other):
@@ -222,8 +206,8 @@ class Panel:
 					poly2[y][0] = self.polygon[i]
 					y += 1
 			
-			panel1 = Panel(polygon=poly1)
-			panel2 = Panel(polygon=poly2)
+			panel1 = Panel(self.page, polygon=poly1)
+			panel2 = Panel(self.page, polygon=poly2)
 			
 			# Check that subpanels' width and height are not too small
 			wh_ok = True

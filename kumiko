@@ -2,8 +2,10 @@
 
 
 import sys, os, json, argparse, subprocess, hashlib
+
 from kumikolib import Kumiko
 from lib.html import HTML
+from lib.debug import Debug
 
 
 parser = argparse.ArgumentParser(description='Kumiko CLI')
@@ -44,7 +46,7 @@ if len(args.input) == 1 and os.path.isdir(args.input[0]):
 	folder = args.input[0]
 	if folder[-1] == '/':
 		folder = folder[0:-1]
-	info = k.parse_dir(folder)
+	k.parse_dir(folder)
 	html_file = os.path.join('tests/results',os.path.basename(folder)+'.html')
 
 # File
@@ -53,21 +55,23 @@ elif len(args.input) == 1 and os.path.isfile(args.input[0]):
 	folder = os.path.dirname(f)
 	if not folder:
 		folder = './'
-	info = k.parse_images([f])
+	k.parse_images([f])
 	html_file = os.path.join('tests/results',os.path.basename(f)+'.html')
 
 # URL list
 else:
 	folder = 'urls'
-	info = k.parse_url_list(args.input)
+	k.parse_url_list(args.input)
 	filehash = hashlib.sha1(';'.join(sorted(args.input)).encode()).hexdigest()
 	html_file = os.path.join('tests/results',filehash+'.html')
 
-if len(info) == 0:
+infos = k.get_infos()
+
+if len(infos) == 0:
 	print("--input (-i) is not a file, or directory, or URL list: '"+str(args.input)+"'")
 	sys.exit(1)
 
-info = json.dumps(info)
+infos = json.dumps(infos)
 
 
 # Generate HTML
@@ -77,10 +81,10 @@ if args.html or args.browser or args.html_static_dir or args.debug:
 	
 	html = ''
 	if args.debug:
-		html = k.dbg.html(folder,reldir)
+		html = Debug.html(folder,reldir)
 	else:
 		html += HTML.header(reldir = reldir)
-		html += HTML.reader(info,images_dir)
+		html += HTML.reader(infos,images_dir)
 		html += HTML.footer
 	
 	if args.output:
@@ -94,14 +98,14 @@ if args.html or args.browser or args.html_static_dir or args.debug:
 	else:
 		print(html)
 
-# Or JSON info
+# Or JSON infos
 else:
 	if args.output:
 		f = open(args.output[0], 'w')
-		f.write(info)
+		f.write(infos)
 		f.close()
 	else:
-		print(info)
+		print(infos)
 
 
 # Open in browser

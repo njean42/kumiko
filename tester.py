@@ -2,7 +2,7 @@
 
 
 import os, subprocess, json, argparse, re, tempfile
-from kumikolib import Kumiko,Panel,Debug
+from lib.debug import Debug
 from lib.html import HTML
 
 
