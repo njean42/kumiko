@@ -55,7 +55,7 @@ class Page:
 				try:
 					self.license = json.load(fh)
 				except json.decoder.JSONDecodeError:
-					print('License file {} is not a valid JSON file'.format(filename+'.license'))
+					print(f"License file {filename+'.license'} is not a valid JSON file")
 					sys.exit(1)
 		
 		Debug.add_step('Initial state', self.get_infos())
@@ -151,7 +151,7 @@ class Page:
 		else:
 			raise Exception('Fatal error, unknown background color: '+str(bgcol)) 
 		
-		Debug.add_image(thresh,'Thresholded image, supposed {} background'.format(bgcol))
+		Debug.add_image(thresh,f"Thresholded image, supposed {bgcol} background")
 		
 		return contours
 	

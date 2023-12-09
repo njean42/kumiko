@@ -29,9 +29,10 @@ class Tester:
 		
 		# Test all files in tests/images/$folder/
 		if len(self.files) == 0:
-			for d in os.scandir('tests/images'):
-				 if d.is_dir():
-					 self.files.append(d)
+			with os.scandir('tests/images') as it:
+				for d in it:
+					if d.is_dir() and re.match('^\d{3}-', d.name):
+						self.files.append(d)
 			self.files.sort(key=lambda d: d.name)
 	
 	
@@ -41,7 +42,7 @@ class Tester:
 	
 	
 	def run(self, git_version):
-		print('\n########## Finding panels with kumiko version',git_version,'##########')
+		print('\n\n########## Finding panels with kumiko version',git_version,'##########')
 		kumiko_bin = './kumiko'
 		
 		# Kumiko would not accept non-image files before v1.2, special case for .licence files
@@ -63,7 +64,7 @@ class Tester:
 					if re.search('\.license$',g.name):
 						os.rename(g,os.path.join(tmpfolder.name,os.path.basename(g)))
 			
-			print("##### Kumiko-cutting {0} ({1}) #####".format(f if isinstance(f,str) else f.name, git_version))
+			print("\n##### Kumiko-cutting {0} ({1}) #####".format(f if isinstance(f,str) else f.name, git_version))
 			
 			subprocess.run(['mkdir','-p',os.path.join(self.savedir,git_version)])
 			jsonfile = os.path.join(self.savedir,git_version,os.path.basename(f)+'.json')
@@ -81,7 +82,7 @@ class Tester:
 		for i in range(len(self.git_versions)-1):
 			v1 = self.git_versions[i]
 			v2 = self.git_versions[i+1]
-			print('\n########## Comparing kumiko results between versions',v1,'and',v2,'##########')
+			print('\n\n########## Comparing kumiko results between versions',v1,'and',v2,'##########')
 			
 			files_diff = {}
 			

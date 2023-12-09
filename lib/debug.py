@@ -85,7 +85,7 @@ class Debug:
 			step_name = str(i+1) + '. ' +Debug.steps[j]['name']
 			
 			if len(files_diff) == 0:
-				html += "<h2>{} - no change</h2>".format(step_name);
+				html += f"<h2>{step_name} - no change</h2>";
 			
 			for filename in files_diff:
 				html += HTML.side_by_side_panels(

@@ -5,47 +5,47 @@ import json
 
 class HTML:
 	def header(title='',reldir=''):
-		return """<!DOCTYPE html>
-<html>
+		return f"""<!DOCTYPE html>
+			<html>
 
-<head>
-	<title>Kumiko Reader</title>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<script type="text/javascript" src="{reldir}jquery-3.2.1.min.js"></script>
-	<script type="text/javascript" src="{reldir}reader.js"></script>
-	<link rel="stylesheet" media="all" href="{reldir}style.css" />
-	<style type="text/css">
-		h2, h3 {{ text-align: center; margin-top: 3em; }}
-		.sidebyside {{ display: flex; justify-content: space-around; }}
-		.sidebyside > div {{ width: 45%; }}
-		.version, .step-info {{ text-align: center; }}
-		.kumiko-reader.halfwidth {{ max-width: 45%; }}
-		.kumiko-reader.fullpage {{ width: 100%; height: 100%; }}
-	</style>
-</head>
+			<head>
+				<title>Kumiko Reader</title>
+				<meta charset="utf-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1">
+				<script type="text/javascript" src="{reldir}jquery-3.2.1.min.js"></script>
+				<script type="text/javascript" src="{reldir}reader.js"></script>
+				<link rel="stylesheet" media="all" href="{reldir}style.css" />
+				<style type="text/css">
+					h2, h3 {{ text-align: center; margin-top: 3em; }}
+					.sidebyside {{ display: flex; justify-content: space-around; }}
+					.sidebyside > div {{ width: 45%; }}
+					.version, .step-info {{ text-align: center; }}
+					.kumiko-reader.halfwidth {{ max-width: 45%; }}
+					.kumiko-reader.fullpage {{ width: 100%; height: 100%; }}
+				</style>
+			</head>
 
-<body>
-<h1>{title}</h1>
+			<body>
+			<h1>{title}</h1>
 
-""".format(title=title,reldir=reldir)
+		"""
 	
 	
 	def nbdiffs(files_diff):
-		return "<p>{0} differences found in files</p>".format(len(files_diff))
+		return f"<p>{len(files_diff)} differences found in files</p>"
 	
 	
 	pageId = 0
 	def side_by_side_panels(title,step_info,jsons,v1,v2,images_dir,known_panels,diff_numbering_panels):
-		html = """
-			<h2>{0}</h2>
-			<p class="step-info">{1}</p>
+		html = f"""
+			<h2>{title}</h2>
+			<p class="step-info">{step_info}</p>
 			<div class="sidebyside">
-				<div class="version">{2}</div>
-				<div class="version">{3}</div>
+				<div class="version">{v1}</div>
+				<div class="version">{v2}</div>
 			</div>
 			<div class="sidebyside">
-		""".format(title,step_info,v1,v2)
+		"""
 		
 		oneside = """
 			<div id="page{id}" class="kumiko-reader halfwidth debug"></div>
@@ -73,24 +73,24 @@ class HTML:
 	def imgbox(images):
 		html = "<h3>Debugging images</h3>\n<div class='imgbox'>\n";
 		for img in images:
-			html += "\t<div><p>{}</p><img src='{}' /></div>\n".format(img['label'],img['filename'])
+			html += f"\t<div><p>{img['label']}</p><img src='{img['filename']}' /></div>\n"
 		
 		return html + "</div>\n\n"
 	
 	
 	def reader(js,images_dir):
-		return """
+		return f"""
 			<div id="reader" class="kumiko-reader fullpage"></div>
 			<script type="text/javascript">
 				var reader = new Reader({{
 					container: $('#reader'),
-					comicsJson: {json},
+					comicsJson: {js},
 					images_dir: '{images_dir}',
 					controls: true
 				}});
 				reader.start();
 			</script>
-			""".format(json=js,images_dir=images_dir)
+			"""
 	
 	
 	footer = """

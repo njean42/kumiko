@@ -58,7 +58,7 @@ class Panel:
 	def __ge__(self, other): return self.__gt__(other)
 	def area(self): return self.w * self.h
 	
-	def __str__(self): return "[left: {}, right: {}, top: {}, bottom: {} ({}x{})]".format(self.x,self.r,self.y,self.b,self.w,self.h)
+	def __str__(self): return f"[left: {self.x}, right: {self.r}, top: {self.y}, bottom: {self.b} ({self.w}x{self.h})]"
 	def __hash__(self): return hash(self.__str__())
 	
 	def __setattr__(self,name,value):

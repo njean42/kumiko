@@ -68,8 +68,8 @@ class Kumiko:
 			try:
 				self.parse_image(filename,url=urls[i] if urls else None)
 			except NotAnImageException:
-				print("Not an image, will be ignored: {}".format(filename), file=sys.stderr)
-				pass  # this file is not an image, will not be part of the results
+				if not filename.endswith(".license"):
+					print(f"Not an image, will be ignored: {filename}", file=sys.stderr)
 	
 	
 	def parse_image(self,filename,url=None):
