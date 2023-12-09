@@ -13,7 +13,8 @@ class Panel:
 	small_panel_ratio = None
 	numbering = 'ltr'  # left-to-right by default
 	
-	def set_numbering(numbering):
+	@classmethod
+	def set_numbering(cls, numbering):
 		if not (numbering in ['ltr','rtl']):
 			raise Exception('Fatal error, unknown numbering: '+str(numbering))
 		Panel.numbering = numbering

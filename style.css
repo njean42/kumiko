@@ -139,7 +139,10 @@ ul {
 .kumiko-reader.debug .container:not(.zoomed) .panel.unknown span {
 	color: #e74c3c;
 }
-.kumiko-reader.debug .container:not(.zoomed) .panel span.panelnb { font-size: 150%; }
+.kumiko-reader.debug .container:not(.zoomed) .panel span { display: none; }
+.kumiko-reader.debug .container:not(.zoomed) .panel:hover span { display: block; }
+.kumiko-reader.debug .container:not(.zoomed) .panel span.panelnb { display: block; font-size: 150%; }
+.kumiko-reader.debug .container:not(.zoomed) .panel.different-number span.panelnb { color: #e74c3c; font-weight: bold; }
 
 /* Debug show panel edges */
 .kumiko-reader.debug .container:not(.zoomed) .panel span.top     { position: absolute; top: 0;    left: 45%; }

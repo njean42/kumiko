@@ -350,14 +350,29 @@ class Kumiko:
 		actual_gutters = Kumiko.actual_gutters(panels)
 		infos['gutters'] = [actual_gutters['x'],actual_gutters['y']]
 		
-		panels.sort()  # TODO: remove when panels expansion is smarter
+		panels.sort()  # TODO: move this below before panels sort-fix, when panels expansion is smarter
 		self.expand_panels(panels)
 		
 		if len(panels) == 0:
 			panels.append( Panel([0,0,infos['size'][0],infos['size'][1]]) );
-		
-		# Number panels comics-wise (ltr/rtl)
-		panels.sort()
+
+		# Fix panels simple sorting (issue #12)
+		changes = 1
+		while(changes):
+			changes = 0
+			for i, p in enumerate(panels):
+				neighbours_before = [p.find_top_panel(panels)]
+				neighbours_before.append(p.find_right_panel(panels) if self.options['rtl'] else p.find_left_panel(panels))
+				for neighbour in neighbours_before:
+					if neighbour is None:
+						continue
+					neighbour_pos = panels.index(neighbour)
+					if i < neighbour_pos:
+						changes += 1
+						panels.insert(neighbour_pos, panels.pop(i))
+						break
+				if changes > 0:
+					break  # start a new whole loop with reordered panels
 		
 		# Simplify panels back to lists (x,y,w,h)
 		panels = list(map(lambda p: p.to_xywh(), panels))

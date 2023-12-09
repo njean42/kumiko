@@ -25,7 +25,8 @@ class Reader {
 		}
 		this.comic = options.comicsJson;
 		
-		this.known_panels = options.known_panels ? options.known_panels : [];
+		this.known_panels = options.known_panels || [];
+		this.diff_numbering_panels = options.diff_numbering_panels || [];
 		
 		// init attributes
 		this.currpage = 0;
@@ -254,12 +255,16 @@ class Reader {
 		for (var p in imginfo['panels'])
 		{
 			var unknown = !this.known_panels.includes(parseInt(p));
+			var diff_number = this.diff_numbering_panels.includes(i)
+			
 			p = imginfo['panels'][p];
 			var [x,y,w,h] = p;
 			
 			var panel = $('<div class="panel"><!-- --></div>');
 			if (unknown)
 				panel.addClass('unknown');
+			if (diff_number)
+				panel.addClass('different-number');
 			var panelcss = {
 				top: '' + y/imgh*100 + '%',
 				left: '' + x/imgw*100 + '%',

@@ -11,7 +11,11 @@ class Tester:
 	
 	files = []
 	git_repo = 'https://framagit.org/nicooo/kumiko'
-	git_versions = ['v1.4.1', 'current']
+	git_versions = [
+		# 'v1.0', 'v1.1', 'v1.1.1', 'v1.2', 'v1.2.1', 'v1.3', 'v1.4',
+		'v1.4.1',
+		'current',
+	]
 	
 	def __init__(self, options):
 		self.savedir = os.path.join('tests','results')
@@ -108,7 +112,14 @@ class Tester:
 			diff_file.write(HTML.nbdiffs(files_diff))
 			
 			for img in files_diff:
-				diff_file.write(HTML.side_by_side_panels(img,'',files_diff[img]['jsons'],v1,v2,images_dir=files_diff[img]['images_dir'], known_panels=files_diff[img]['known_panels']))
+				diff_file.write(HTML.side_by_side_panels(
+					img,
+					'',
+					files_diff[img]['jsons'],v1,v2,
+					images_dir = files_diff[img]['images_dir'],
+					known_panels = files_diff[img]['known_panels'],
+					diff_numbering_panels = files_diff[img]['diff_numbering_panels'],
+				))
 			
 			diff_file.write(HTML.footer)
 			diff_file.close()

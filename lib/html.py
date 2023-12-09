@@ -36,7 +36,7 @@ class HTML:
 	
 	
 	pageId = 0
-	def side_by_side_panels(title,step_info,jsons,v1,v2,images_dir,known_panels):
+	def side_by_side_panels(title,step_info,jsons,v1,v2,images_dir,known_panels,diff_numbering_panels):
 		html = """
 			<h2>{0}</h2>
 			<p class="step-info">{1}</p>
@@ -54,7 +54,8 @@ class HTML:
 					container: $('#page{id}'),
 					comicsJson: {json},
 					images_dir: '{images_dir}',
-					known_panels: {known_panels}
+					known_panels: {known_panels},
+					diff_numbering_panels: {diff_numbering_panels},
 				}});
 				reader.start();
 			</script>
@@ -62,7 +63,7 @@ class HTML:
 		i = -1
 		for js in jsons:
 			i += 1
-			html += oneside.format(id=HTML.pageId,json=json.dumps(js),images_dir=images_dir,known_panels=known_panels[i])
+			html += oneside.format(id=HTML.pageId,json=json.dumps(js),images_dir=images_dir,known_panels=known_panels[i],diff_numbering_panels=diff_numbering_panels)
 			HTML.pageId += 1
 		
 		html += '</div>'

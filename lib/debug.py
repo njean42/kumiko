@@ -99,6 +99,7 @@ class Debug:
 					'AFTER  - {} panels'.format(len(files_diff[filename]['jsons'][1][0]['panels'])),
 					images_dir=files_diff[filename]['images_dir'],
 					known_panels=files_diff[filename]['known_panels'],
+					diff_numbering_panels=files_diff[filename]['diff_numbering_panels'],
 				)
 		
 		html += HTML.footer
@@ -141,11 +142,21 @@ class Debug:
 				images_dir = file_or_dir if os.path.isdir(file_or_dir) else os.path.dirname(file_or_dir)
 				images_dir = os.path.relpath(images_dir,'tests/results')+'/'
 			
+			diff_numbering = []
+			diff_panels = False
 			if len(known_panels[0]) != len(panels_v1) or len(known_panels[1]) != len(panels_v2):
+				diff_panels = True
+			else:
+				for i in range(len(panels_v1)):
+					if panels_v1[i] != panels_v2[i]:
+						diff_numbering.append(i+1)
+			
+			if diff_panels or len(diff_numbering) > 0:
 				files_diff[json1[p]['filename']] = {
 					'jsons': [[json1[p]],[json2[p]]],
 					'images_dir': images_dir,
-					'known_panels': [json.dumps(known_panels[0]),json.dumps(known_panels[1])]
+					'known_panels': [json.dumps(known_panels[0]),json.dumps(known_panels[1])],
+					'diff_numbering_panels': diff_numbering,
 				}
 		
 		return files_diff
