@@ -55,8 +55,6 @@ Just run `kumiko -i /path/to/comicpage.jpg -b firefox` on your *comicpage.jpg* f
 This should do the trick for Debian distros and derivatives (Ubuntu, Linux Mint...).
 If you successfully use *Kumiko* on any other platform, please let us know!
 
-*Kumiko* now uses python3.
-
 
 
 # Usage & Testing

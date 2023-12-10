@@ -1,10 +1,10 @@
-
-
 import json
 
 
 class HTML:
-	def header(title='',reldir=''):
+
+	@staticmethod
+	def header(title = '', reldir = ''):
 		return f"""<!DOCTYPE html>
 			<html>
 
@@ -29,14 +29,18 @@ class HTML:
 			<h1>{title}</h1>
 
 		"""
-	
-	
+
+	@staticmethod
 	def nbdiffs(files_diff):
 		return f"<p>{len(files_diff)} differences found in files</p>"
-	
-	
+
 	pageId = 0
-	def side_by_side_panels(title,step_info,jsons,v1,v2,images_dir,known_panels,diff_numbering_panels):
+
+	@staticmethod
+	def side_by_side_panels(
+		title, step_info, jsons, v1, v2, images_dir, known_panels,
+		diff_numbering_panels
+	):
 		html = f"""
 			<h2>{title}</h2>
 			<p class="step-info">{step_info}</p>
@@ -46,7 +50,7 @@ class HTML:
 			</div>
 			<div class="sidebyside">
 		"""
-		
+
 		oneside = """
 			<div id="page{id}" class="kumiko-reader halfwidth debug"></div>
 			<script type="text/javascript">
@@ -63,22 +67,28 @@ class HTML:
 		i = -1
 		for js in jsons:
 			i += 1
-			html += oneside.format(id=HTML.pageId,json=json.dumps(js),images_dir=images_dir,known_panels=known_panels[i],diff_numbering_panels=diff_numbering_panels)
+			html += oneside.format(
+				id = HTML.pageId,
+				json = json.dumps(js),
+				images_dir = images_dir,
+				known_panels = known_panels[i],
+				diff_numbering_panels = diff_numbering_panels
+			)
 			HTML.pageId += 1
-		
+
 		html += '</div>'
 		return html
-	
-	
+
+	@staticmethod
 	def imgbox(images):
-		html = "<h3>Debugging images</h3>\n<div class='imgbox'>\n";
+		html = "<h3>Debugging images</h3>\n<div class='imgbox'>\n"
 		for img in images:
 			html += f"\t<div><p>{img['label']}</p><img src='{img['filename']}' /></div>\n"
-		
+
 		return html + "</div>\n\n"
-	
-	
-	def reader(js,images_dir):
+
+	@staticmethod
+	def reader(js, images_dir):
 		return f"""
 			<div id="reader" class="kumiko-reader fullpage"></div>
 			<script type="text/javascript">
@@ -91,10 +101,9 @@ class HTML:
 				reader.start();
 			</script>
 			"""
-	
-	
+
 	footer = """
 
 </body>
 </html>
-""" 
+"""
