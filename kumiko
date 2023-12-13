@@ -13,39 +13,19 @@ from lib.debug import Debug
 parser = argparse.ArgumentParser(description = 'Kumiko CLI')
 
 # Input/Output
-parser.add_argument(
-	'-i',
-	'--input',
-	nargs = '+',
-	required = True,
-	help = 'A file or folder name to parse'
-)
-parser.add_argument(
-	'-o',
-	'--output',
-	nargs = 1,
-	help = 'A file name to save json/html output to'
-)
-parser.add_argument(
-	'--rtl',
-	action = 'store_true',
-	help = 'Pass this option to number panels right-to-left'
-)
+parser.add_argument('-i', '--input', nargs = '+', required = True, help = 'A file or folder name to parse')
+parser.add_argument('-o', '--output', nargs = 1, help = 'A file name to save json/html output to')
+parser.add_argument('--rtl', action = 'store_true', help = 'Pass this option to number panels right-to-left')
 
 # HTML reader page options
 parser.add_argument(
 	'-b',
 	'--browser',
 	nargs = 1,
-	help =
-	'Opens given browser to read your comic page(s) panel-by-panel! (implies --html)',
+	help = 'Opens given browser to read your comic page(s) panel-by-panel! (implies --html)',
 	choices = ['firefox', 'konqueror', 'chromium']
 )
-parser.add_argument(
-	'--html',
-	action = 'store_true',
-	help = 'Generates an HTML file for reading'
-)
+parser.add_argument('--html', action = 'store_true', help = 'Generates an HTML file for reading')
 parser.add_argument(
 	'--html-static-dir',
 	nargs = 1,
@@ -64,26 +44,17 @@ parser.add_argument(
 
 # Utilities
 parser.add_argument(
-	'--debug',
-	action = 'store_true',
-	help = "Generate an HTML debug file to show Kumiko's processing steps"
+	'--debug', action = 'store_true', help = "Generate an HTML debug file to show Kumiko's processing steps"
 )
-parser.add_argument(
-	'--progress', action = 'store_true', help = 'Prints progress information'
-)
+parser.add_argument('--progress', action = 'store_true', help = 'Prints progress information')
 
 args = parser.parse_args()
 k = Kumiko(
 	{
-		'debug':
-			args.debug,
-		'progress':
-			args.progress,
-		'rtl':
-			args.rtl,
-		'min_panel_size_ratio':
-			args.min_panel_size_ratio[0]
-			if args.min_panel_size_ratio else False
+		'debug': args.debug,
+		'progress': args.progress,
+		'rtl': args.rtl,
+		'min_panel_size_ratio': args.min_panel_size_ratio[0] if args.min_panel_size_ratio else False
 	}
 )
 
@@ -97,10 +68,7 @@ if len(args.input) == 1 and os.path.isdir(args.input[0]):
 	if folder[-1] == '/':
 		folder = folder[0:-1]
 	k.parse_dir(folder)
-	html_file = os.path.join(
-		'tests/results',
-		os.path.basename(folder) + '.html'
-	)
+	html_file = os.path.join('tests/results', os.path.basename(folder) + '.html')
 
 # File
 elif len(args.input) == 1 and os.path.isfile(args.input[0]):
@@ -121,19 +89,14 @@ else:
 infos = k.get_infos()
 
 if len(infos) == 0:
-	print(
-		"--input (-i) is not a file, or directory, or URL list: '" +
-		str(args.input) + "'"
-	)
+	print("--input (-i) is not a file, or directory, or URL list: '" + str(args.input) + "'")
 	sys.exit(1)
 
 infos = json.dumps(infos)
 
 # Generate HTML
 if args.html or args.browser or args.html_static_dir or args.debug:
-	images_dir = 'urls' if folder == 'urls' else os.path.relpath(
-		folder, 'tests/results'
-	) + '/'
+	images_dir = 'urls' if folder == 'urls' else os.path.relpath(folder, 'tests/results') + '/'
 	reldir = args.html_static_dir[0] if args.html_static_dir else '../../'
 
 	html = ''

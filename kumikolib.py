@@ -20,9 +20,8 @@ class Kumiko:
 
 		Debug.debug = self.options['debug']
 
-		self.options['min_panel_size_ratio'] = options[
-			'min_panel_size_ratio'
-		] if 'min_panel_size_ratio' in options else None
+		self.options['min_panel_size_ratio'
+						] = options['min_panel_size_ratio'] if 'min_panel_size_ratio' in options else None
 
 		self.page_list = []
 
@@ -37,11 +36,7 @@ class Kumiko:
 				filename = 'img' + ('0' * nbdigits + str(i))[-nbdigits:]
 
 				if self.options['progress']:
-					print(
-						'\t',
-						url, (' -> ' + filename) if urls else '',
-						file = sys.stderr
-					)
+					print('\t', url, (' -> ' + filename) if urls else '', file = sys.stderr)
 
 				i += 1
 				parts = urlparse(url)
@@ -76,10 +71,7 @@ class Kumiko:
 				self.parse_image(filename, url = urls[i] if urls else None)
 			except NotAnImageException:
 				if not filename.endswith(".license"):
-					print(
-						f"Not an image, will be ignored: {filename}",
-						file = sys.stderr
-					)
+					print(f"Not an image, will be ignored: {filename}", file = sys.stderr)
 
 	def parse_image(self, filename, url = None):
 		self.page_list.append(

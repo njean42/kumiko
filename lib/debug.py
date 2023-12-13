@@ -41,13 +41,11 @@ class Debug:
 		elapsed = Debug.time - Debug.prev_time
 		print(f"{name} -- time elapsed: {elapsed/pow(10,9):.2f} seconds")
 
-		Debug.steps.append(
-			{
-				'name': name,
-				'elapsed_since_last_step': elapsed,
-				'infos': copy.deepcopy(infos),
-			}
-		)
+		Debug.steps.append({
+			'name': name,
+			'elapsed_since_last_step': elapsed,
+			'infos': copy.deepcopy(infos),
+		})
 
 	imgID = 0
 
@@ -71,9 +69,7 @@ class Debug:
 	@staticmethod
 	def html(images_dir, reldir):
 		html = ''
-		html += HTML.header(
-			title = 'Debugging - Kumiko processing steps', reldir = reldir
-		)
+		html += HTML.header(title = 'Debugging - Kumiko processing steps', reldir = reldir)
 
 		for i in range(len(Debug.steps) - 1):
 			j = i + 1
@@ -83,10 +79,7 @@ class Debug:
 				html += HTML.imgbox(Debug.images[Debug.steps[i]['name']])
 
 			# Display panels diffs
-			files_diff = Debug.get_files_diff(
-				images_dir, [Debug.steps[i]['infos']],
-				[Debug.steps[j]['infos']]
-			)
+			files_diff = Debug.get_files_diff(images_dir, [Debug.steps[i]['infos']], [Debug.steps[j]['infos']])
 
 			step_name = str(i + 1) + '. ' + Debug.steps[j]['name']
 
@@ -115,18 +108,11 @@ class Debug:
 		for p in range(len(json1)):  # for each page
 
 			# check both images' filename and size, should be the same
-			if os.path.basename(json1[p]['filename']
-								) != os.path.basename(json2[p]['filename']):
-				print(
-					'error, filenames are not the same', json1[p]['filename'],
-					json2[p]['filename']
-				)
+			if os.path.basename(json1[p]['filename']) != os.path.basename(json2[p]['filename']):
+				print('error, filenames are not the same', json1[p]['filename'], json2[p]['filename'])
 				continue
 			if json1[p]['size'] != json2[p]['size']:
-				print(
-					'error, image sizes are not the same', json1[p]['size'],
-					json2[p]['size']
-				)
+				print('error, image sizes are not the same', json1[p]['size'], json2[p]['size'])
 				continue
 
 			panels_v1 = list(map(lambda p: Panel(None, p), json1[p]['panels']))
@@ -146,16 +132,12 @@ class Debug:
 
 			images_dir = 'urls'
 			if file_or_dir != 'urls':
-				images_dir = file_or_dir if os.path.isdir(
-					file_or_dir
-				) else os.path.dirname(file_or_dir)
+				images_dir = file_or_dir if os.path.isdir(file_or_dir) else os.path.dirname(file_or_dir)
 				images_dir = os.path.relpath(images_dir, 'tests/results') + '/'
 
 			diff_numbering = []
 			diff_panels = False
-			if len(known_panels[0]) != len(panels_v1) or len(
-				known_panels[1]
-			) != len(panels_v2):
+			if len(known_panels[0]) != len(panels_v1) or len(known_panels[1]) != len(panels_v2):
 				diff_panels = True
 			else:
 				for i in range(len(panels_v1)):
@@ -166,11 +148,8 @@ class Debug:
 				files_diff[json1[p]['filename']] = {
 					'jsons': [[json1[p]], [json2[p]]],
 					'images_dir': images_dir,
-					'known_panels':
-						[
-							json.dumps(known_panels[0]),
-							json.dumps(known_panels[1])
-						],
+					'known_panels': [json.dumps(known_panels[0]),
+										json.dumps(known_panels[1])],
 					'diff_numbering_panels': diff_numbering,
 				}
 
@@ -181,14 +160,11 @@ class Debug:
 		if not Debug.debug:
 			return
 		if Debug.contourSize is None:
-			raise Exception(
-				"Fatal error, Debug.contourSize has not been defined"
-			)
+			raise Exception("Fatal error, Debug.contourSize has not been defined")
 
 		for i in range(len(contours)):
 			if colour == 'auto':
-				colour = Debug.subpanel_colours[i %
-												len(Debug.subpanel_colours)]
+				colour = Debug.subpanel_colours[i % len(Debug.subpanel_colours)]
 
 			cv.drawContours(img, [contours[i]], 0, colour, Debug.contourSize)
 
@@ -198,23 +174,18 @@ class Debug:
 			return None
 
 		if Debug.contourSize is None:
-			raise Exception(
-				"Fatal error, Debug.contourSize has not been defined"
-			)
+			raise Exception("Fatal error, Debug.contourSize has not been defined")
 
 		img = img.copy()
 
 		for p in panels:
-			cv.rectangle(
-				img, (p.x, p.y), (p.r, p.b), colour, Debug.contourSize
-			)
+			cv.rectangle(img, (p.x, p.y), (p.r, p.b), colour, Debug.contourSize)
 
 		# + draw inner white border
 		for p in panels:
 			cv.rectangle(
 				img, (p.x + Debug.contourSize, p.y + Debug.contourSize),
-				(p.r - Debug.contourSize, p.b - Debug.contourSize),
-				Debug.colours['white'], int(Debug.contourSize / 2)
+				(p.r - Debug.contourSize, p.b - Debug.contourSize), Debug.colours['white'], int(Debug.contourSize / 2)
 			)
 
 		return img

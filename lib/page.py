@@ -20,27 +20,15 @@ class Page:
 		actual_gutters = self.actual_gutters()
 
 		return {
-			'filename':
-				self.url if self.url else os.path.basename(self.filename),
-			'size':
-				self.img_size,
-			'numbering':
-				self.numbering,
+			'filename': self.url if self.url else os.path.basename(self.filename),
+			'size': self.img_size,
+			'numbering': self.numbering,
 			'gutters': [actual_gutters['x'], actual_gutters['y']],
-			'license':
-				self.license,
-			'panels':
-				list(map(lambda p: p.to_xywh(), self.panels)),
+			'license': self.license,
+			'panels': list(map(lambda p: p.to_xywh(), self.panels)),
 		}
 
-	def __init__(
-		self,
-		filename,
-		numbering = None,
-		debug = False,
-		url = None,
-		min_panel_size_ratio = None
-	):
+	def __init__(self, filename, numbering = None, debug = False, url = None, min_panel_size_ratio = None):
 		self.filename = filename
 		self.panels = []
 		self.background_color = '?'
@@ -51,9 +39,7 @@ class Page:
 
 		self.numbering = numbering or "ltr"
 		if not (numbering in ['ltr', 'rtl']):
-			raise Exception(
-				'Fatal error, unknown numbering: ' + str(numbering)
-			)
+			raise Exception('Fatal error, unknown numbering: ' + str(numbering))
 
 		self.small_panel_ratio = min_panel_size_ratio or Page.DEFAULT_MIN_PANEL_SIZE_RATIO
 		self.url = url
@@ -68,9 +54,7 @@ class Page:
 				try:
 					self.license = json.load(fh)
 				except json.decoder.JSONDecodeError:
-					print(
-						f"License file {filename+'.license'} is not a valid JSON file"
-					)
+					print(f"License file {filename+'.license'} is not a valid JSON file")
 					sys.exit(1)
 
 		Debug.add_step('Initial state', self.get_infos())
@@ -84,28 +68,10 @@ class Page:
 		Debug.add_image(gray, 'Shades of gray')
 
 		ddepth = cv.CV_16S
-		grad_x = cv.Sobel(
-			gray,
-			ddepth,
-			1,
-			0,
-			ksize = 3,
-			scale = 1,
-			delta = 0,
-			borderType = cv.BORDER_DEFAULT
-		)
+		grad_x = cv.Sobel(gray, ddepth, 1, 0, ksize = 3, scale = 1, delta = 0, borderType = cv.BORDER_DEFAULT)
 		# Gradient-Y
 		# grad_y = cv.Scharr(gray,ddepth,0,1)
-		grad_y = cv.Sobel(
-			gray,
-			ddepth,
-			0,
-			1,
-			ksize = 3,
-			scale = 1,
-			delta = 0,
-			borderType = cv.BORDER_DEFAULT
-		)
+		grad_y = cv.Sobel(gray, ddepth, 0, 1, ksize = 3, scale = 1, delta = 0, borderType = cv.BORDER_DEFAULT)
 
 		abs_grad_x = cv.convertScaleAbs(grad_x)
 		abs_grad_y = cv.convertScaleAbs(grad_y)
@@ -152,12 +118,7 @@ class Page:
 		self.expand_panels()
 
 		if len(self.panels) == 0:
-			self.panels.append(
-				Panel(
-					page = self,
-					xywh = [0, 0, self.img_size[0], self.img_size[1]]
-				)
-			)
+			self.panels.append(Panel(page = self, xywh = [0, 0, self.img_size[0], self.img_size[1]]))
 
 		# Fix panels simple sorting (issue #12)
 		changes = 1
@@ -165,10 +126,7 @@ class Page:
 			changes = 0
 			for i, p in enumerate(self.panels):
 				neighbours_before = [p.find_top_panel()]
-				neighbours_before.append(
-					p.find_right_panel() if self.numbering ==
-					"rtl" else p.find_left_panel()
-				)
+				neighbours_before.append(p.find_right_panel() if self.numbering == "rtl" else p.find_left_panel())
 				for neighbour in neighbours_before:
 					if neighbour is None:
 						continue
@@ -186,9 +144,7 @@ class Page:
 
 		# Black background: values above 100 will be black, the rest white
 		_, thresh = cv.threshold(gray, 100, 255, cv.THRESH_BINARY)
-		contours, _ = cv.findContours(
-			thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
-		)[-2:]
+		contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
 
 		Debug.add_image(thresh, f"Thresholded image")
 
@@ -230,12 +186,9 @@ class Page:
 					panels_to_add.append(big_panel)
 
 					tmp_img = Debug.draw_panels(
-						self.img, list(map(lambda k: self.panels[k], grouped)),
-						Debug.colours['lightblue']
+						self.img, list(map(lambda k: self.panels[k], grouped)), Debug.colours['lightblue']
 					)
-					tmp_img = Debug.draw_panels(
-						tmp_img, [big_panel], Debug.colours['green']
-					)
+					tmp_img = Debug.draw_panels(tmp_img, [big_panel], Debug.colours['green'])
 					Debug.add_image(tmp_img, 'Group small panels')
 
 				# remove all panels in group
@@ -258,9 +211,7 @@ class Page:
 				old_panels.append(p)
 				new_panels += new
 
-				Debug.draw_contours(
-					self.img, list(map(lambda n: n.polygon, new))
-				)
+				Debug.draw_contours(self.img, list(map(lambda n: n.polygon, new)))
 
 		for p in old_panels:
 			self.panels.remove(p)
@@ -302,14 +253,10 @@ class Page:
 			for j in range(i + 1, len(self.panels)):
 				if self.panels[i].contains(self.panels[j]):
 					panels_to_remove.append(j)
-					self.panels[i] = Panel.merge(
-						self, self.panels[i], self.panels[j]
-					)
+					self.panels[i] = Panel.merge(self, self.panels[i], self.panels[j])
 				elif self.panels[j].contains(self.panels[i]):
 					panels_to_remove.append(i)
-					self.panels[j] = Panel.merge(
-						self, self.panels[i], self.panels[j]
-					)
+					self.panels[j] = Panel.merge(self, self.panels[i], self.panels[j])
 
 		for i in reversed(sorted(list(set(panels_to_remove)))):
 			del self.panels[i]
@@ -334,12 +281,7 @@ class Page:
 		if not gutters_y:
 			gutters_y = [1]
 
-		return {
-			'x': func(gutters_x),
-			'y': func(gutters_y),
-			'r': -func(gutters_x),
-			'b': -func(gutters_y)
-		}
+		return {'x': func(gutters_x), 'y': func(gutters_y), 'r': -func(gutters_x), 'b': -func(gutters_y)}
 
 	# Expand panels to their neighbour's edge, or page boundaries
 	def expand_panels(self):
@@ -350,27 +292,16 @@ class Page:
 				neighbour = p.find_neighbour_panel(d)
 				if neighbour:
 					# expand to that neighbour's edge (minus gutter)
-					newcoord = getattr(
-						neighbour, {
-							'x': 'r',
-							'r': 'x',
-							'y': 'b',
-							'b': 'y'
-						}[d]
-					) + gutters[d]
+					newcoord = getattr(neighbour, {'x': 'r', 'r': 'x', 'y': 'b', 'b': 'y'}[d]) + gutters[d]
 				else:
 					# expand to the furthest known edge (frame around all panels)
-					min_panel = min(
-						self.panels, key = lambda p: getattr(p, d)
-					) if d in [
+					min_panel = min(self.panels, key = lambda p: getattr(p, d)) if d in [
 						'x', 'y'
 					] else max(self.panels, key = lambda p: getattr(p, d))
 					newcoord = getattr(min_panel, d)
 
 				if newcoord != -1:
-					if d in ['r', 'b'] and newcoord > getattr(p, d) or d in [
-						'x', 'y'
-					] and newcoord < getattr(p, d):
+					if d in ['r', 'b'] and newcoord > getattr(p, d) or d in ['x', 'y'] and newcoord < getattr(p, d):
 						setattr(p, d, newcoord)
 
 		Debug.add_step('Expand panels', self.get_infos())

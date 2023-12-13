@@ -8,9 +8,7 @@ class Panel:
 		self.page = page
 
 		if xywh is None and polygon is None:
-			raise Exception(
-				'Fatal error: no parameter to define Panel boundaries'
-			)
+			raise Exception('Fatal error: no parameter to define Panel boundaries')
 
 		if xywh is None:
 			xywh = cv.boundingRect(polygon)
@@ -123,35 +121,19 @@ class Panel:
 		return other.x <= self.x <= other.r or self.x <= other.x <= self.r
 
 	def find_top_panel(self):
-		all_top = list(
-			filter(
-				lambda p: p.b <= self.y and p.same_col(self), self.page.panels
-			)
-		)
+		all_top = list(filter(lambda p: p.b <= self.y and p.same_col(self), self.page.panels))
 		return max(all_top, key = lambda p: p.b) if all_top else None
 
 	def find_left_panel(self):
-		all_left = list(
-			filter(
-				lambda p: p.r <= self.x and p.same_row(self), self.page.panels
-			)
-		)
+		all_left = list(filter(lambda p: p.r <= self.x and p.same_row(self), self.page.panels))
 		return max(all_left, key = lambda p: p.r) if all_left else None
 
 	def find_bottom_panel(self):
-		all_bottom = list(
-			filter(
-				lambda p: p.y >= self.b and p.same_col(self), self.page.panels
-			)
-		)
+		all_bottom = list(filter(lambda p: p.y >= self.b and p.same_col(self), self.page.panels))
 		return min(all_bottom, key = lambda p: p.y) if all_bottom else None
 
 	def find_right_panel(self):
-		all_right = list(
-			filter(
-				lambda p: p.x >= self.r and p.same_row(self), self.page.panels
-			)
-		)
+		all_right = list(filter(lambda p: p.x >= self.r and p.same_row(self), self.page.panels))
 		return min(all_right, key = lambda p: p.x) if all_right else None
 
 	def find_neighbour_panel(self, d):
@@ -197,8 +179,7 @@ class Panel:
 				# elements that join panels together (e.g. speech bubbles) will be ignored (cut out) if their width and height is < min(panelwidth * ratio, panelheight * ratio)
 				ratio = 0.25
 				max_dist = min(self.w() * ratio, self.h() * ratio)
-				if abs(dot1[0] - dot2[0]
-						) < max_dist and abs(dot1[1] - dot2[1]) < max_dist:
+				if abs(dot1[0] - dot2[0]) < max_dist and abs(dot1[1] - dot2[1]) < max_dist:
 					if not all_close:
 						close_dots.append([i, j])
 				else:
@@ -210,11 +191,8 @@ class Panel:
 		# take the close dots that are closest from one another
 		cuts = sorted(
 			close_dots,
-			key = lambda d: abs(
-				self.polygon[d[0]][0][0] - self.polygon[d[1]][0][0]
-			) +  # dot1.x - dot2.x
-			abs(self.polygon[d[0]][0][1] - self.polygon[d[1]][0][1]
-				)  # dot1.y - dot2.y
+			key = lambda d: abs(self.polygon[d[0]][0][0] - self.polygon[d[1]][0][0]) +  # dot1.x - dot2.x
+			abs(self.polygon[d[0]][0][1] - self.polygon[d[1]][0][1])  # dot1.y - dot2.y
 		)
 
 		for cut in cuts:

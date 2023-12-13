@@ -37,10 +37,7 @@ class HTML:
 	pageId = 0
 
 	@staticmethod
-	def side_by_side_panels(
-		title, step_info, jsons, v1, v2, images_dir, known_panels,
-		diff_numbering_panels
-	):
+	def side_by_side_panels(title, step_info, jsons, v1, v2, images_dir, known_panels, diff_numbering_panels):
 		html = f"""
 			<h2>{title}</h2>
 			<p class="step-info">{step_info}</p>
