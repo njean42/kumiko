@@ -24,8 +24,6 @@ class Page:
 				self.url if self.url else os.path.basename(self.filename),
 			'size':
 				self.img_size,
-			'background':
-				self.background_color,
 			'numbering':
 				self.numbering,
 			'gutters': [actual_gutters['x'], actual_gutters['y']],
@@ -78,18 +76,45 @@ class Page:
 		Debug.add_step('Initial state', self.get_infos())
 		Debug.add_image(self.img, 'Input image')
 
-		self.gray = cv.cvtColor(self.img, cv.COLOR_BGR2GRAY)
-		Debug.add_image(self.gray, 'Shades of gray')
+		# https://docs.opencv.org/3.4/d2/d2c/tutorial_sobel_derivatives.html
+		# TODO: blur?
+		# src = cv.GaussianBlur(src, (3, 3), 0)  # TODO: , BORDER_DEFAULT ?
 
-		for bgcol in ['white', 'black']:
-			self.parse_image_with_bgcol(bgcol)
-			if len(self.panels) > 1:
-				return
+		gray = cv.cvtColor(self.img, cv.COLOR_BGR2GRAY)
+		Debug.add_image(gray, 'Shades of gray')
 
-	def parse_image_with_bgcol(self, bgcol):
+		ddepth = cv.CV_16S
+		grad_x = cv.Sobel(
+			gray,
+			ddepth,
+			1,
+			0,
+			ksize = 3,
+			scale = 1,
+			delta = 0,
+			borderType = cv.BORDER_DEFAULT
+		)
+		# Gradient-Y
+		# grad_y = cv.Scharr(gray,ddepth,0,1)
+		grad_y = cv.Sobel(
+			gray,
+			ddepth,
+			0,
+			1,
+			ksize = 3,
+			scale = 1,
+			delta = 0,
+			borderType = cv.BORDER_DEFAULT
+		)
 
-		contours = self.get_contours(self.gray, bgcol)
-		self.background_color = bgcol
+		abs_grad_x = cv.convertScaleAbs(grad_x)
+		abs_grad_y = cv.convertScaleAbs(grad_y)
+
+		grad = cv.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
+
+		Debug.add_image(grad, 'Sobel filter applied')
+
+		contours = self.get_contours(grad)
 
 		# Get (square) panels out of contours
 		Debug.contourSize = int(sum(self.img_size) / 2 * 0.004)
@@ -157,33 +182,15 @@ class Page:
 
 		Debug.add_step('Numbering fixed', self.get_infos())
 
-	def get_contours(self, gray, bgcol):
+	def get_contours(self, gray):
 
-		thresh = None
-		contours = None
+		# Black background: values above 100 will be black, the rest white
+		_, thresh = cv.threshold(gray, 100, 255, cv.THRESH_BINARY)
+		contours, _ = cv.findContours(
+			thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
+		)[-2:]
 
-		# White background: values below 220 will be black, the rest white
-		if bgcol == 'white':
-			_, thresh = cv.threshold(gray, 220, 255, cv.THRESH_BINARY_INV)
-			contours, _ = cv.findContours(
-				thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
-			)[-2:]
-
-		elif bgcol == 'black':
-			# Black background: values above 25 will be black, the rest white
-			_, thresh = cv.threshold(gray, 25, 255, cv.THRESH_BINARY)
-			contours, _ = cv.findContours(
-				thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE
-			)[-2:]
-
-		else:
-			raise Exception(
-				'Fatal error, unknown background color: ' + str(bgcol)
-			)
-
-		Debug.add_image(
-			thresh, f"Thresholded image, supposed {bgcol} background"
-		)
+		Debug.add_image(thresh, f"Thresholded image")
 
 		return contours
 
