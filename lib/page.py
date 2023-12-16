@@ -61,8 +61,6 @@ class Page:
 		Debug.add_image(self.img, 'Input image')
 
 		# https://docs.opencv.org/3.4/d2/d2c/tutorial_sobel_derivatives.html
-		# TODO: blur?
-		# src = cv.GaussianBlur(src, (3, 3), 0)  # TODO: , BORDER_DEFAULT ?
 
 		self.gray = cv.cvtColor(self.img, cv.COLOR_BGR2GRAY)
 		Debug.add_image(self.gray, 'Shades of gray')
@@ -81,8 +79,31 @@ class Page:
 		Debug.add_image(self.sobel, 'Sobel filter applied')
 
 		self.get_contours()
+		self.get_initial_panels()
+		self.group_small_panels()
+		self.split_panels()
+		self.exclude_small_panels()
+		self.merge_panels()
+		self.deoverlap_panels()
+		self.exclude_small_panels()
 
-		# Get (square) panels out of contours
+		self.panels.sort()  # TODO: move this below before panels sort-fix, when panels expansion is smarter
+		self.expand_panels()
+
+		if len(self.panels) == 0:
+			self.panels.append(Panel(page = self, xywh = [0, 0, self.img_size[0], self.img_size[1]]))
+
+		self.fix_panels_numbering()
+
+	def get_contours(self):
+		# Black background: values above 100 will be black, the rest white
+		_, thresh = cv.threshold(self.sobel, 100, 255, cv.THRESH_BINARY)
+		self.contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
+
+		Debug.add_image(thresh, f"Thresholded image")
+
+	# Get (square) panels out of initial contours
+	def get_initial_panels(self):
 		Debug.contourSize = int(sum(self.img_size) / 2 * 0.004)
 		self.panels = []
 		for contour in self.contours:
@@ -101,57 +122,7 @@ class Page:
 		Debug.add_image(self.img, 'Initial contours')
 		Debug.add_step('Panels from initial contours', self.get_infos())
 
-		# Group small panels that are close together, into bigger ones
-		self.group_small_panels()
-
-		# See if panels can be cut into several (two non-consecutive points are close)
-		self.split_panels()
-
-		# Merge panels that shouldn't have been split (speech bubble diving in a panel)
-		self.merge_panels()
-
-		# splitting polygons may result in panels slightly overlapping, de-overlap them
-		self.deoverlap_panels()
-
-		# re-filter out small panels
-		self.panels = list(filter(lambda p: not p.is_small(), self.panels))
-		Debug.add_step('Exclude small panels', self.get_infos())
-
-		# TODO: move this below before panels sort-fix, when panels expansion is smarter
-		self.panels.sort()
-		self.expand_panels()
-
-		if len(self.panels) == 0:
-			self.panels.append(Panel(page = self, xywh = [0, 0, self.img_size[0], self.img_size[1]]))
-
-		# Fix panels simple sorting (issue #12)
-		changes = 1
-		while (changes):
-			changes = 0
-			for i, p in enumerate(self.panels):
-				neighbours_before = [p.find_top_panel()]
-				neighbours_before.append(p.find_right_panel() if self.numbering == "rtl" else p.find_left_panel())
-				for neighbour in neighbours_before:
-					if neighbour is None:
-						continue
-					neighbour_pos = self.panels.index(neighbour)
-					if i < neighbour_pos:
-						changes += 1
-						self.panels.insert(neighbour_pos, self.panels.pop(i))
-						break
-				if changes > 0:
-					break  # start a new whole loop with reordered panels
-
-		Debug.add_step('Numbering fixed', self.get_infos())
-
-	def get_contours(self):
-
-		# Black background: values above 100 will be black, the rest white
-		_, thresh = cv.threshold(self.sobel, 100, 255, cv.THRESH_BINARY)
-		self.contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
-
-		Debug.add_image(thresh, f"Thresholded image")
-
+	# Group small panels that are close together, into bigger ones
 	def group_small_panels(self):
 		i = 0
 		panels_to_add = []
@@ -204,6 +175,7 @@ class Page:
 
 		Debug.add_step('Group small panels', self.get_infos())
 
+	# See if panels can be cut into several (two non-consecutive points are close)
 	def split_panels(self):
 		new_panels = []
 		old_panels = []
@@ -222,10 +194,12 @@ class Page:
 		Debug.add_image(self.img, 'Split contours (shown as non-red contours)')
 		Debug.add_step('Panels from split contours', self.get_infos())
 
+	def exclude_small_panels(self):
 		self.panels = list(filter(lambda p: not p.is_small(), self.panels))
 
 		Debug.add_step('Exclude small panels', self.get_infos())
 
+	# Splitting polygons may result in panels slightly overlapping, de-overlap them
 	def deoverlap_panels(self):
 		for p1 in self.panels:
 			for p2 in self.panels:
@@ -248,7 +222,7 @@ class Page:
 
 		Debug.add_step('Deoverlap panels', self.get_infos())
 
-	# Merge every two panels where one contains the other
+	# Merge panels that shouldn't have been split (speech bubble diving into a panel)
 	def merge_panels(self):
 		panels_to_remove = []
 		for i in range(len(self.panels)):
@@ -307,3 +281,24 @@ class Page:
 						setattr(p, d, newcoord)
 
 		Debug.add_step('Expand panels', self.get_infos())
+
+	# Fix panels simple sorting (issue #12)
+	def fix_panels_numbering(self):
+		changes = 1
+		while (changes):
+			changes = 0
+			for i, p in enumerate(self.panels):
+				neighbours_before = [p.find_top_panel()]
+				neighbours_before.append(p.find_right_panel() if self.numbering == "rtl" else p.find_left_panel())
+				for neighbour in neighbours_before:
+					if neighbour is None:
+						continue
+					neighbour_pos = self.panels.index(neighbour)
+					if i < neighbour_pos:
+						changes += 1
+						self.panels.insert(neighbour_pos, self.panels.pop(i))
+						break
+				if changes > 0:
+					break  # start a new whole loop with reordered panels
+
+		Debug.add_step('Numbering fixed', self.get_infos())
