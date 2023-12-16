@@ -215,6 +215,7 @@ class Panel:
 
 				polygon = np.append(polygon, [[dot1]], axis = 0)
 
+		# Find dots close to one another
 		close_dots = []
 		for i in range(len(polygon) - 3):
 			for j in range(i + 3, len(polygon)):
@@ -258,26 +259,7 @@ class Panel:
 			panel1 = Panel(self.page, polygon = poly1)
 			panel2 = Panel(self.page, polygon = poly2)
 
-			# Check that subpanels' width and height are not too small
-			wh_ok = True
-			for p in [panel1, panel2]:
-				if p.h() / self.h() < 0.1:
-					wh_ok = False
-				if p.w() / self.w() < 0.1:
-					wh_ok = False
-
-			if not wh_ok:
-				continue
-
-			# Check that subpanels' area is not too small
-			area1 = cv.contourArea(poly1)
-			area2 = cv.contourArea(poly2)
-
-			if max(area1, area2) == 0:
-				continue
-
-			areaRatio = min(area1, area2) / max(area1, area2)
-			if areaRatio < 0.1:
+			if panel1.is_small() or panel2.is_small():
 				continue
 
 			subpanels1 = panel1.split()
