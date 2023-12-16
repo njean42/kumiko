@@ -16,22 +16,22 @@ class Tester:
 	files = []
 	git_repo = 'https://framagit.org/nicooo/kumiko'
 	git_versions = [
-		# 'v1.0', 'v1.1', 'v1.1.1', 'v1.2', 'v1.2.1', 'v1.3', 'v1.4',
-		'v1.4.1',
+		# 'v1.0', 'v1.1', 'v1.1.1', 'v1.2', 'v1.2.1', 'v1.3', 'v1.4', 'v1.4.1',
+		'v1.4.2',
 		'current',
 	]
 
-	def __init__(self, options):
+	def __init__(self, browser = None, html = False, folder = None):
+		self.browser = browser
+		self.html = html or bool(browser)
+		if folder:
+			self.files = [folder]
+
 		self.max_diffs = 20
 
 		self.savedir = os.path.join('tests', 'results')
 		if not os.path.isdir(self.savedir):
 			raise Exception(f"'{self.savedir}' is not a directory")
-
-		self.options = {
-			'browser': options['browser'] if 'browser' in options and options['browser'] else False,
-			'html': options['html'] if 'html' in options else False
-		}
 
 		# Test all files in tests/images/$folder/
 		if len(self.files) == 0:
@@ -109,7 +109,7 @@ class Tester:
 
 			print('Found', len(files_diff), 'differences')
 
-			if not self.options['html']:
+			if not self.html:
 				return
 
 			print('Generating HTML diff file')
@@ -136,8 +136,8 @@ class Tester:
 
 				diff_file.write(HTML.footer)
 
-			if self.options['browser']:
-				subprocess.run([self.options['browser'], html_diff_file], check = True)
+			if self.browser:
+				subprocess.run([self.browser, html_diff_file], check = True)
 
 
 parser = argparse.ArgumentParser(description = 'Kumiko Tester')
@@ -153,21 +153,29 @@ parser.add_argument(
 parser.add_argument(
 	'-b',
 	'--browser',
-	nargs = 1,
+	nargs = '?',
 	help = 'Opens given browser to view the differences when ready (implies --html)',
-	choices = ['firefox', 'konqueror', 'chromium']
+	choices = ['firefox', 'konqueror', 'chromium'],
+	const = 'firefox'
 )
+
 parser.add_argument(
 	'--html', action = 'store_true', help = 'Generates an HTML file showing the differences between code versions'
+)
+
+parser.add_argument(
+	'-f',
+	'--folder',
+	nargs = 1,
+	help = 'A folder ton run kumiko versions against',
 )
 
 args = parser.parse_args()
 
 tester = Tester(
-	{
-		'html': args.html or args.browser,
-		'browser': args.browser[0] if args.browser is not None else False,
-	}
+	html = args.html,
+	browser = args.browser if args.browser else None,
+	folder = args.folder[0] if args.folder else None,
 )
 
 if args.action in ['run', 'run_compare']:

@@ -44,10 +44,10 @@ class Kumiko:
 					continue
 
 				r = requests.get(url, timeout = 5)
-				with open(os.path.join(tempdir.name, filename), 'wb') as f:
+				with open(os.path.join(tempdir, filename), 'wb') as f:
 					f.write(r.content)
 
-			self.parse_dir(tempdir.name, urls = urls)
+			self.parse_dir(tempdir, urls = urls)
 
 	def parse_dir(self, directory, urls = None):
 		filenames = []

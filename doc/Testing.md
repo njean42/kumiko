@@ -20,7 +20,7 @@ But it will also run *Kumiko*'s previous version on the same files and check the
 
 # Results
 
-An HTML file is generated under `./tests/results/` that you can open locally (add `-b firefox` to open it automatically).
+An HTML file is generated under `./tests/results/` that you can open locally (add `-b` to open it automatically in firefox).
 
 It will show you all the differences between the previous git version and yours!
 

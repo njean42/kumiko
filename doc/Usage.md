@@ -11,7 +11,7 @@ More detailed help can be found by running `kumiko --help`.
 
 	kumiko -i /path/to/comicbook/page001.jpg
 
-(Add `-b firefox` to view the panels, on top of given image, in your browser! 'Show panels' option is in the menu.)
+(Add `-b` to view the panels, on top of given image, in firefox! 'Show panels' option is in the menu.)
 
 The result would look like the following:
 
@@ -48,7 +48,7 @@ We may want an option in the future to get more accurate polygons instead.
 
 	kumiko -i /path/to/comicbook/
 
-(Add `-b firefox` to view the panels for all pages, on top of your images, in your browser! 'Show panels' option is in the menu.)
+(Add `-b` to view the panels for all pages, on top of your images, in firefox! 'Show panels' option is in the menu.)
 
 The result of such a command would be a JSON-formatted array of all images in the folder:
 
@@ -80,7 +80,7 @@ The image order is alphabetical, which is based on a commonly encountered *page0
 
 You can pass `kumiko` a `--debug` parameter that tells you are craving debugging information.
 
-This will create an HTML file (add `-b firefox` to open it automatically) displaying the various processing steps *Kumiko* has taken, and the panels discovered, added, deleted or rearranged at each stage.
+This will create an HTML file (add `-b` to open it automatically in firefox) displaying the various processing steps *Kumiko* has taken, and the panels discovered, added, deleted or rearranged at each stage.
 
 
 ## License information

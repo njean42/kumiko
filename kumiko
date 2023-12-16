@@ -21,9 +21,10 @@ parser.add_argument('--rtl', action = 'store_true', help = 'Pass this option to 
 parser.add_argument(
 	'-b',
 	'--browser',
-	nargs = 1,
+	nargs = '?',
 	help = 'Opens given browser to read your comic page(s) panel-by-panel! (implies --html)',
-	choices = ['firefox', 'konqueror', 'chromium']
+	choices = ['firefox', 'konqueror', 'chromium'],
+	const = 'firefox'
 )
 parser.add_argument('--html', action = 'store_true', help = 'Generates an HTML file for reading')
 parser.add_argument(
@@ -44,7 +45,7 @@ parser.add_argument(
 
 # Utilities
 parser.add_argument(
-	'--debug', action = 'store_true', help = "Generate an HTML debug file to show Kumiko's processing steps"
+	'-d', '--debug', action = 'store_true', help = "Generate an HTML debug file to show Kumiko's processing steps"
 )
 parser.add_argument('--progress', action = 'store_true', help = 'Prints progress information')
 
@@ -129,4 +130,4 @@ else:
 
 # Open in browser
 if args.browser:
-	subprocess.run([args.browser[0], html_file])
+	subprocess.run([args.browser, html_file])
