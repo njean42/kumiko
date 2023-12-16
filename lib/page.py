@@ -64,35 +64,39 @@ class Page:
 		# TODO: blur?
 		# src = cv.GaussianBlur(src, (3, 3), 0)  # TODO: , BORDER_DEFAULT ?
 
-		gray = cv.cvtColor(self.img, cv.COLOR_BGR2GRAY)
-		Debug.add_image(gray, 'Shades of gray')
+		self.gray = cv.cvtColor(self.img, cv.COLOR_BGR2GRAY)
+		Debug.add_image(self.gray, 'Shades of gray')
 
 		ddepth = cv.CV_16S
-		grad_x = cv.Sobel(gray, ddepth, 1, 0, ksize = 3, scale = 1, delta = 0, borderType = cv.BORDER_DEFAULT)
+		grad_x = cv.Sobel(self.gray, ddepth, 1, 0, ksize = 3, scale = 1, delta = 0, borderType = cv.BORDER_DEFAULT)
 		# Gradient-Y
-		# grad_y = cv.Scharr(gray,ddepth,0,1)
-		grad_y = cv.Sobel(gray, ddepth, 0, 1, ksize = 3, scale = 1, delta = 0, borderType = cv.BORDER_DEFAULT)
+		# grad_y = cv.Scharr(self.gray,ddepth,0,1)
+		grad_y = cv.Sobel(self.gray, ddepth, 0, 1, ksize = 3, scale = 1, delta = 0, borderType = cv.BORDER_DEFAULT)
 
 		abs_grad_x = cv.convertScaleAbs(grad_x)
 		abs_grad_y = cv.convertScaleAbs(grad_y)
 
-		grad = cv.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
+		self.sobel = cv.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
 
-		Debug.add_image(grad, 'Sobel filter applied')
+		Debug.add_image(self.sobel, 'Sobel filter applied')
 
-		contours = self.get_contours(grad)
+		self.get_contours()
 
 		# Get (square) panels out of contours
 		Debug.contourSize = int(sum(self.img_size) / 2 * 0.004)
 		self.panels = []
-		for contour in contours:
+		for contour in self.contours:
 			arclength = cv.arcLength(contour, True)
 			epsilon = 0.001 * arclength
 			approx = cv.approxPolyDP(contour, epsilon, True)
 
+			panel = Panel(page = self, polygon = approx)
+			if panel.is_very_small():
+				continue
+
 			Debug.draw_contours(self.img, [approx], Debug.colours['red'])
 
-			self.panels.append(Panel(page = self, polygon = approx))
+			self.panels.append(panel)
 
 		Debug.add_image(self.img, 'Initial contours')
 		Debug.add_step('Panels from initial contours', self.get_infos())
@@ -140,15 +144,13 @@ class Page:
 
 		Debug.add_step('Numbering fixed', self.get_infos())
 
-	def get_contours(self, gray):
+	def get_contours(self):
 
 		# Black background: values above 100 will be black, the rest white
-		_, thresh = cv.threshold(gray, 100, 255, cv.THRESH_BINARY)
-		contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
+		_, thresh = cv.threshold(self.sobel, 100, 255, cv.THRESH_BINARY)
+		self.contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
 
 		Debug.add_image(thresh, f"Thresholded image")
-
-		return contours
 
 	def group_small_panels(self):
 		i = 0

@@ -84,13 +84,16 @@ class Panel:
 	def __hash__(self):
 		return hash(self.__str__())
 
-	def is_small(self):
+	def is_small(self, extra_ratio = 1):
 		return any(
 			[
-				self.w() < self.page.img_size[0] * self.page.small_panel_ratio,
-				self.h() < self.page.img_size[1] * self.page.small_panel_ratio,
+				self.w() < self.page.img_size[0] * self.page.small_panel_ratio * extra_ratio,
+				self.h() < self.page.img_size[1] * self.page.small_panel_ratio * extra_ratio,
 			]
 		)
+
+	def is_very_small(self):
+		return self.is_small(1 / 10)
 
 	def overlap_panel(self, other):
 		if self.x > other.r or other.x > self.r:  # panels are left and right from one another
