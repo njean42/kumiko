@@ -20,7 +20,7 @@ class HTML:
 					.sidebyside {{ display: flex; justify-content: space-around; }}
 					.sidebyside > div {{ width: 45%; }}
 					.version, .step-info {{ text-align: center; }}
-					.kumiko-reader.halfwidth {{ max-width: 45%; }}
+					.kumiko-reader.halfwidth {{ max-width: 45%; max-height: 90vh; }}
 					.kumiko-reader.fullpage {{ width: 100%; height: 100%; }}
 				</style>
 			</head>
@@ -54,7 +54,7 @@ class HTML:
 				var reader = new Reader({{
 					container: $('#page{id}'),
 					comicsJson: {json},
-					images_dir: '{images_dir}',
+					images_dir: {images_dir},
 					known_panels: {known_panels},
 					diff_numbering_panels: {diff_numbering_panels},
 				}});
@@ -67,7 +67,7 @@ class HTML:
 			html += oneside.format(
 				id = HTML.pageId,
 				json = json.dumps(js),
-				images_dir = images_dir,
+				images_dir = json.dumps(images_dir),
 				known_panels = known_panels[i],
 				diff_numbering_panels = diff_numbering_panels
 			)
@@ -92,7 +92,7 @@ class HTML:
 				var reader = new Reader({{
 					container: $('#reader'),
 					comicsJson: {js},
-					images_dir: '{images_dir}',
+					images_dir: {json.dumps(images_dir)},
 					controls: true
 				}});
 				reader.start();
