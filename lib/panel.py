@@ -1,5 +1,8 @@
+import math
 import cv2 as cv
 import numpy as np
+
+from lib.debug import Debug
 
 
 class Panel:
@@ -168,25 +171,58 @@ class Panel:
 			]
 		)
 
+	@staticmethod
+	def dist(dot1, dot2):
+		return math.sqrt(pow(dot1[0] - dot2[0], 2) + pow(dot1[1] - dot2[1], 2))
+
+	def max_distance_between_close_dots(self):
+		# elements that join panels together (e.g. speech bubbles) will be ignored (cut out)
+		# if their width and height is < min(panelwidth * ratio, panelheight * ratio)
+		ratio = 0.25
+		return min(self.w() * ratio, self.h() * ratio)
+
+	def dots_are_close(self, dot1, dot2):
+		return Panel.dist(dot1, dot2) < self.max_distance_between_close_dots()
+
 	def split(self):
 		if self.polygon is None:
 			return None
 
-		close_dots = []
-		for i in range(len(self.polygon) - 1):
-			all_close = True
-			for j in range(i + 1, len(self.polygon)):
-				dot1 = self.polygon[i][0]
-				dot2 = self.polygon[j][0]
+		if self.is_small():
+			return None
 
-				# elements that join panels together (e.g. speech bubbles) will be ignored (cut out) if their width and height is < min(panelwidth * ratio, panelheight * ratio)
-				ratio = 0.25
-				max_dist = min(self.w() * ratio, self.h() * ratio)
-				if abs(dot1[0] - dot2[0]) < max_dist and abs(dot1[1] - dot2[1]) < max_dist:
-					if not all_close:
-						close_dots.append([i, j])
-				else:
-					all_close = False
+		# add dots along straight edges, so that a dot can be "close to an edge
+		polygon = np.ndarray(shape = (0, 1, 2), dtype = int, order = 'F')
+		for i in range(len(self.polygon)):
+			j = i + 1
+			dot1 = self.polygon[i][0]
+			dot2 = self.polygon[j % len(self.polygon)][0]
+
+			polygon = np.append(polygon, [[dot1]], axis = 0)
+
+			if self.dots_are_close(dot1, dot2):
+				continue
+
+			split_dist = self.max_distance_between_close_dots() / 2
+
+			while (Panel.dist(dot1, dot2) > split_dist):
+				alpha_x = math.acos((dot2[0] - dot1[0]) / Panel.dist(dot1, dot2))
+				alpha_y = math.asin((dot2[1] - dot1[1]) / Panel.dist(dot1, dot2))
+				dist_x = int(math.cos(alpha_x) * split_dist)
+				dist_y = int(math.sin(alpha_y) * split_dist)
+
+				dot1 = [dot1[0] + dist_x, dot1[1] + dist_y]
+
+				polygon = np.append(polygon, [[dot1]], axis = 0)
+
+		close_dots = []
+		for i in range(len(polygon) - 3):
+			for j in range(i + 3, len(polygon)):
+				dot1 = polygon[i][0]
+				dot2 = polygon[j][0]
+
+				if self.dots_are_close(dot1, dot2):
+					close_dots.append([i, j])
 
 		if len(close_dots) == 0:
 			return None
@@ -194,12 +230,12 @@ class Panel:
 		# take the close dots that are closest from one another
 		cuts = sorted(
 			close_dots,
-			key = lambda d: abs(self.polygon[d[0]][0][0] - self.polygon[d[1]][0][0]) +  # dot1.x - dot2.x
-			abs(self.polygon[d[0]][0][1] - self.polygon[d[1]][0][1])  # dot1.y - dot2.y
+			key = lambda d: abs(polygon[d[0]][0][0] - polygon[d[1]][0][0]) +  # dot1.x - dot2.x
+			abs(polygon[d[0]][0][1] - polygon[d[1]][0][1])  # dot1.y - dot2.y
 		)
 
 		for cut in cuts:
-			poly1len = len(self.polygon) - cut[1] + cut[0]
+			poly1len = len(polygon) - cut[1] + cut[0]
 			poly2len = cut[1] - cut[0]
 
 			# A panel should have at least three edges
@@ -211,12 +247,12 @@ class Panel:
 			poly2 = np.zeros(shape = (poly2len, 1, 2), dtype = int)
 
 			x = y = 0
-			for i in range(len(self.polygon)):
+			for i in range(len(polygon)):
 				if i <= cut[0] or i > cut[1]:
-					poly1[x][0] = self.polygon[i]
+					poly1[x][0] = polygon[i]
 					x += 1
 				else:
-					poly2[y][0] = self.polygon[i]
+					poly2[y][0] = polygon[i]
 					y += 1
 
 			panel1 = Panel(self.page, polygon = poly1)

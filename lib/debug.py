@@ -5,7 +5,6 @@ import time
 import cv2 as cv
 
 from lib.html import HTML
-from lib.panel import Panel
 
 
 class Debug:
@@ -39,7 +38,7 @@ class Debug:
 		Debug.time = time.time_ns()
 
 		elapsed = Debug.time - Debug.prev_time
-		print(f"{name} -- time elapsed: {elapsed/pow(10,9):.2f} seconds")
+		print(f"{name} ({len(infos['panels'])} panels) -- time elapsed: {elapsed/pow(10,9):.2f} seconds")
 
 		Debug.steps.append({
 			'name': name,
@@ -103,6 +102,8 @@ class Debug:
 
 	@staticmethod
 	def get_files_diff(file_or_dir, json1, json2):
+		from lib.panel import Panel
+
 		files_diff = {}
 
 		for p in range(len(json1)):  # for each page
