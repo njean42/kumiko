@@ -95,7 +95,6 @@ class Tester:
 			files_diff = {}
 
 			for file_or_dir in self.files:
-
 				if len(files_diff) > 20:
 					print('The maximum number of differences in files (20) has been reached, stopping')
 					break

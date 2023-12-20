@@ -3,6 +3,7 @@ import json
 import copy
 import time
 import cv2 as cv
+import numpy as np
 
 from lib.html import HTML
 
@@ -28,6 +29,12 @@ class Debug:
 	steps = []
 	images = {}
 	time = time.time_ns()
+	base_img = img = None
+
+	@staticmethod
+	def set_base_img(img):
+		Debug.base_img = img
+		Debug.img = np.copy(img)
 
 	@staticmethod
 	def add_step(name, infos):
@@ -49,7 +56,7 @@ class Debug:
 	imgID = 0
 
 	@staticmethod
-	def add_image(img, label):
+	def add_image(label, img = None):
 		if not Debug.debug:
 			return
 
@@ -59,7 +66,10 @@ class Debug:
 
 		filename = str(Debug.imgID) + '-' + label + '.jpg'
 		Debug.imgID += 1
-		cv.imwrite(os.path.join('tests/results', filename), img)
+		cv.imwrite(os.path.join('tests/results', filename), Debug.img if img is None else img)
+
+		# reinit image so we see only specific steps' contours/lines/dots
+		Debug.img = np.copy(Debug.base_img)
 
 		if currstep not in Debug.images:
 			Debug.images[currstep] = []
@@ -149,15 +159,14 @@ class Debug:
 				files_diff[json1[p]['filename']] = {
 					'jsons': [[json1[p]], [json2[p]]],
 					'images_dir': images_dir,
-					'known_panels': [json.dumps(known_panels[0]),
-										json.dumps(known_panels[1])],
+					'known_panels': [json.dumps(known_panels[0]), json.dumps(known_panels[1])],
 					'diff_numbering_panels': diff_numbering,
 				}
 
 		return files_diff
 
 	@staticmethod
-	def draw_contours(img, contours, colour = 'auto'):
+	def draw_contours(contours, colour = 'auto'):
 		if not Debug.debug:
 			return
 		if Debug.contourSize is None:
@@ -167,26 +176,40 @@ class Debug:
 			if colour == 'auto':
 				colour = Debug.subpanel_colours[i % len(Debug.subpanel_colours)]
 
-			cv.drawContours(img, [contours[i]], 0, colour, Debug.contourSize)
+			cv.drawContours(Debug.img, [contours[i]], 0, colour, Debug.contourSize)
 
 	@staticmethod
-	def draw_panels(img, panels, colour):
+	def draw_line(dot1, dot2, colour = 'auto'):
+		if not Debug.debug:
+			return
+		if Debug.contourSize is None:
+			raise Exception("Fatal error, Debug.contourSize has not been defined")
+
+		cv.line(Debug.img, (dot1[0], dot1[1]), (dot2[0],dot2[1]), colour, Debug.contourSize, cv.LINE_AA)
+
+	@staticmethod
+	def draw_dot(x, y, colour = 'auto'):
+		if not Debug.debug:
+			return
+		if Debug.contourSize is None:
+			raise Exception("Fatal error, Debug.contourSize has not been defined")
+
+		cv.circle(Debug.img,(x,y), Debug.contourSize * 2, colour, -1)
+
+	@staticmethod
+	def draw_panels(panels, colour):
 		if not Debug.debug:
 			return None
 
 		if Debug.contourSize is None:
 			raise Exception("Fatal error, Debug.contourSize has not been defined")
 
-		img = img.copy()
-
 		for p in panels:
-			cv.rectangle(img, (p.x, p.y), (p.r, p.b), colour, Debug.contourSize)
+			cv.rectangle(Debug.img, (p.x, p.y), (p.r, p.b), colour, Debug.contourSize)
 
 		# + draw inner white border
 		for p in panels:
 			cv.rectangle(
-				img, (p.x + Debug.contourSize, p.y + Debug.contourSize),
+				Debug.img, (p.x + Debug.contourSize, p.y + Debug.contourSize),
 				(p.r - Debug.contourSize, p.b - Debug.contourSize), Debug.colours['white'], int(Debug.contourSize / 2)
 			)
-
-		return img

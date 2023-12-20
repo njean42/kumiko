@@ -38,12 +38,15 @@ class HTML:
 
 	@staticmethod
 	def side_by_side_panels(title, step_info, jsons, v1, v2, images_dir, known_panels, diff_numbering_panels):
+
+		print(jsons)
+
 		html = f"""
 			<h2>{title}</h2>
 			<p class="step-info">{step_info}</p>
 			<div class="sidebyside">
-				<div class="version">{v1}</div>
-				<div class="version">{v2}</div>
+				<div class="version">{v1} <span class="processing_time">− processing time {jsons[0][0]['processing_time'] if 'processing_time' in jsons[0][0] else "??"}s</span></div>
+				<div class="version">{v2} <span class="processing_time">- processing time {jsons[1][0]['processing_time']}s</span></div>
 			</div>
 			<div class="sidebyside">
 		"""

@@ -7,6 +7,10 @@ from lib.debug import Debug
 
 class Panel:
 
+	@staticmethod
+	def from_xyrb(page, x, y, r, b):
+		return Panel(page, xywh=[x, y, r-x, b-y])
+
 	def __init__(self, page, xywh = None, polygon = None):
 		self.page = page
 
@@ -82,7 +86,7 @@ class Panel:
 		return self.w() * self.h()
 
 	def __str__(self):
-		return f"[left: {self.x}, right: {self.r}, top: {self.y}, bottom: {self.b} ({self.w()}x{self.h()})]"
+		return f"{self.x}x{self.y}-{self.r}x{self.b}"
 
 	def __hash__(self):
 		return hash(self.__str__())
@@ -112,6 +116,18 @@ class Panel:
 
 		return Panel(self.page, [x, y, r - x, b - y])
 
+	def overlaps(self, other):
+		opanel = self.overlap_panel(other)
+		if opanel is None:
+			return False
+
+		area_ratio = 0.1
+		result = opanel.area() / min(self.area(), other.area()) > area_ratio
+
+		# print(f"{opanel.area()} ({opanel}) / {min(self.area(), other.area())} (min({self},{other})) = {opanel.area() / min(self.area(), other.area())} >? {area_ratio} => {result}")
+
+		return result
+
 	def contains(self, other):
 		o_panel = self.overlap_panel(other)
 		if not o_panel:
@@ -119,6 +135,8 @@ class Panel:
 
 		# self contains other if their overlapping area is more than 50% of other's area
 		return o_panel.area() / other.area() > 0.50
+
+		return self.contains(segment_panel)
 
 	def same_row(self, other):
 		return other.y <= self.y <= other.b or self.y <= other.y <= self.b
@@ -150,15 +168,60 @@ class Panel:
 			'b': self.find_bottom_panel,
 		}[d]()
 
-	@staticmethod
-	def merge(page, p1, p2):
-		min_x = min(p1.x, p2.x)
-		min_y = min(p1.y, p2.y)
-		max_r = max(p1.r, p2.r)
-		max_b = max(p1.b, p2.b)
-		return Panel(page, [min_x, min_y, max_r - min_x, max_b - min_y])
+	def group_with(self, other):
+		min_x = min(self.x, other.x)
+		min_y = min(self.y, other.y)
+		max_r = max(self.r, other.r)
+		max_b = max(self.b, other.b)
+		return Panel(self.page, [min_x, min_y, max_r - min_x, max_b - min_y])
+
+	def merge(self, other):
+		possible_panels = [self]
+
+		# expand self in all four directions where other is
+		if other.x < self.x:
+			possible_panels.append(Panel.from_xyrb(self.page, other.x, self.y, self.r, self.b))
+
+		if other.r > self.r:
+			for pp in possible_panels.copy():
+				possible_panels.append(Panel.from_xyrb(self.page, pp.x, pp.y, other.r, pp.b))
+
+		if other.y < self.y:
+			for pp in possible_panels.copy():
+				possible_panels.append(Panel.from_xyrb(self.page, pp.x, other.y, pp.r, pp.b))
+
+		if other.b > self.b:
+			for pp in possible_panels.copy():
+				possible_panels.append(Panel.from_xyrb(self.page, pp.x, pp.y, pp.r, other.b))
+
+		# don't take a merged panel that bumps into other panels on page
+		other_panels = [p for p in self.page.panels if p not in [self, other]]
+		possible_panels = list(filter(lambda p: not p.bumps_into(other_panels), possible_panels))
+
+		# take the largest merged panel
+		return max(possible_panels, key=lambda p: p.area()) if len(possible_panels) > 0 else self
 
 	def is_close(self, other):
+		c1x = self.x + self.w() / 2
+		c1y = self.y + self.h() / 2
+		c2x = other.x + other.w() / 2
+		c2y = other.y + other.h() / 2
+
+		return all(
+			[
+				abs(c1x - c2x) <= (self.w() + other.w()) * 0.75,
+				abs(c1y - c2y) <= (self.h() + other.h()) * 0.75,
+			]
+		)
+
+	def bumps_into(self, other_panels):
+		for other in other_panels:
+			if self.overlaps(other):
+				return True
+
+		return False
+
+	def is_nearby(self, other):
 		c1x = self.x + self.w() / 2
 		c1y = self.y + self.h() / 2
 		c2x = other.x + other.w() / 2
@@ -175,14 +238,31 @@ class Panel:
 	def dist(dot1, dot2):
 		return math.sqrt(pow(dot1[0] - dot2[0], 2) + pow(dot1[1] - dot2[1], 2))
 
-	def max_distance_between_close_dots(self):
-		# elements that join panels together (e.g. speech bubbles) will be ignored (cut out)
-		# if their width and height is < min(panelwidth * ratio, panelheight * ratio)
-		ratio = 0.25
-		return min(self.w() * ratio, self.h() * ratio)
+	# def max_distance_between_nearby_dots(self):
+	# 	# elements that join panels together (e.g. speech bubbles) will be ignored (cut out)
+	# 	# if their width and height is < min(panelwidth * ratio, panelheight * ratio)
+	# 	ratio = 0.25
+	# 	return min(self.w() * ratio, self.h() * ratio)
 
-	def dots_are_close(self, dot1, dot2):
-		return Panel.dist(dot1, dot2) < self.max_distance_between_close_dots()
+	# def split_by_segment(self, dot1, dot2, max_gutter):
+	# 	p1 = p2 = None
+	# 	if abs(dot1[0] - dot2[0]) < abs(dot1[1] - dot2[1]):  # vertical line
+	# 		x = dot1[0]
+	# 		p1 = Panel(self.page, xywh = [self.x, self.y, x - self.x, self.h()])
+	# 		p2 = Panel(self.page, xywh = [x, self.y, self.r - x, self.h()])
+	# 	else:  # horizontal line
+	# 		y = dot1[1]
+	# 		p1 = Panel(self.page, xywh = [self.x, self.y, self.r, y - self.y])
+	# 		p2 = Panel(self.page, xywh = [self.x, y, self.r, self.b - y])
+	# 		return []
+ #
+	# 	return [p1, p2]
+
+	def segments_coverage(self):
+		pass
+
+	def max_distance_between_nearby_dots(self):
+		return int(max(self.page.img_size) * self.page.small_panel_ratio)
 
 	def split(self):
 		if self.polygon is None:
@@ -191,7 +271,9 @@ class Panel:
 		if self.is_small():
 			return None
 
-		# add dots along straight edges, so that a dot can be "close to an edge
+		split_dist = self.max_distance_between_nearby_dots() / 2
+
+		# add dots along straight edges, so that a dot can be "nearby an edge"
 		polygon = np.ndarray(shape = (0, 1, 2), dtype = int, order = 'F')
 		for i in range(len(self.polygon)):
 			j = i + 1
@@ -199,11 +281,10 @@ class Panel:
 			dot2 = self.polygon[j % len(self.polygon)][0]
 
 			polygon = np.append(polygon, [[dot1]], axis = 0)
+			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['green'])
 
-			if self.dots_are_close(dot1, dot2):
+			if Panel.dist(dot1, dot2) < split_dist:
 				continue
-
-			split_dist = self.max_distance_between_close_dots() / 2
 
 			while (Panel.dist(dot1, dot2) > split_dist):
 				alpha_x = math.acos((dot2[0] - dot1[0]) / Panel.dist(dot1, dot2))
@@ -214,42 +295,47 @@ class Panel:
 				dot1 = [dot1[0] + dist_x, dot1[1] + dist_y]
 
 				polygon = np.append(polygon, [[dot1]], axis = 0)
+				Debug.draw_dot(dot1[0], dot1[1], Debug.colours['green'])
 
-		# Find dots close to one another
-		close_dots = []
-		for i in range(len(polygon) - 3):
-			for j in range(i + 3, len(polygon)):
+		# Find dots nearby to one another
+		nearby_dots = []
+		min_dots_between_nearby_dots = round(len(polygon) / 4)
+
+		print(f"\tmax_distance_between_nearby_dots={self.max_distance_between_nearby_dots()}, min_dots_between_nearby_dots={min_dots_between_nearby_dots}, split_dist={split_dist}, panel={self}")
+
+		for i in range(len(polygon) - min_dots_between_nearby_dots):
+			for j in range(i + min_dots_between_nearby_dots, len(polygon)):
 				dot1 = polygon[i][0]
 				dot2 = polygon[j][0]
 
-				if self.dots_are_close(dot1, dot2):
-					close_dots.append([i, j])
+				if Panel.dist(dot1, dot2) < self.max_distance_between_nearby_dots():
+					nearby_dots.append([i, j])
 
-		if len(close_dots) == 0:
+		if len(nearby_dots) == 0:
 			return None
 
-		# take the close dots that are closest from one another
-		cuts = sorted(
-			close_dots,
-			key = lambda d: abs(polygon[d[0]][0][0] - polygon[d[1]][0][0]) +  # dot1.x - dot2.x
-			abs(polygon[d[0]][0][1] - polygon[d[1]][0][1])  # dot1.y - dot2.y
-		)
+		print(f"\t{len(nearby_dots)} nearby_dots")
 
-		for cut in cuts:
-			poly1len = len(polygon) - cut[1] + cut[0]
-			poly2len = cut[1] - cut[0]
+		splits = []
+		for dots in nearby_dots:
+			for i in dots:
+				dot = polygon[i][0]
+				Debug.draw_dot(dot[0], dot[1], Debug.colours['lightpurple'])
+
+			poly1len = len(polygon) - dots[1] + dots[0]
+			poly2len = dots[1] - dots[0]
 
 			# A panel should have at least three edges
 			if min(poly1len, poly2len) <= 2:
 				continue
 
-			# Construct two subpolygons by distributing the dots around our cut (our close dots)
+			# Construct two subpolygons by distributing the dots around our nearby dots
 			poly1 = np.zeros(shape = (poly1len, 1, 2), dtype = int)
 			poly2 = np.zeros(shape = (poly2len, 1, 2), dtype = int)
 
 			x = y = 0
 			for i in range(len(polygon)):
-				if i <= cut[0] or i > cut[1]:
+				if i <= dots[0] or i > dots[1]:
 					poly1[x][0] = polygon[i]
 					x += 1
 				else:
@@ -259,17 +345,25 @@ class Panel:
 			panel1 = Panel(self.page, polygon = poly1)
 			panel2 = Panel(self.page, polygon = poly2)
 
+			for i in dots:
+				dot = polygon[i][0]
+				Debug.draw_dot(dot[0], dot[1], Debug.colours['lightpurple'])
+
 			if panel1.is_small() or panel2.is_small():
 				continue
 
-			subpanels1 = panel1.split()
-			subpanels2 = panel2.split()
+			if panel1 == self or panel2 == self:
+				continue
 
-			# resurse (find subsubpanels in subpanels)
-			split_panels = []
-			split_panels += [panel1] if subpanels1 is None else subpanels1
-			split_panels += [panel2] if subpanels2 is None else subpanels2
+			if panel1.overlaps(panel2):
+				continue
 
-			return split_panels
+			print(f"\t{len(splits)} splits (panel {self})")
 
-		return None
+			splits.append([panel1, panel2])
+
+		# for s in splits:
+		# 	print(f"{self} => {s[0]} + {s[1]}")
+
+		# return the split that creates the two most size-similar panels
+		return None if len(splits) == 0 else max(splits, key=lambda split: abs(split[0].area() - split[1].area()))

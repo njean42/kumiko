@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 import requests
+import time
 from urllib.parse import urlparse
 
 from lib.page import Page, NotAnImageException
