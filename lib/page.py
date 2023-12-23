@@ -156,53 +156,54 @@ class Page:
 
 	# Group small panels that are close together, into bigger ones
 	def group_small_panels(self):
-		i = 0
-		panels_to_add = []
-		while i < len(self.panels):
-			p1 = self.panels[i]
 
-			if not p1.is_small():
-				i += 1
-				continue
+		small_panels = list(filter(lambda p: p.is_small(), self.panels))
+		groups = {}
+		group_id = 0
 
-			# build up a group of panels that are close to one another
-			big_panel = p1
-			grouped = [i]
-
-			for j in range(i + 1, len(self.panels)):
-				p2 = self.panels[j]
-
-				if j == i or not p2.is_small():
+		for i, p1 in enumerate(small_panels):
+			for p2 in small_panels[i + 1:]:
+				if p1 == p2:
 					continue
 
-				if p2.is_close(big_panel):
-					grouped.append(j)
+				if not p1.is_close(p2):
+					continue
 
-					# build up bigger panel for current group
-					big_panel = big_panel.group_with(p2)
+				if p1 not in groups and p2 not in groups:
+					group_id += 1
+					groups[p1] = group_id
+					groups[p2] = group_id
+				elif p1 in groups and p2 not in groups:
+					groups[p2] = groups[p1]
+				elif p2 in groups and p1 not in groups:
+					groups[p1] = groups[p2]
+				elif groups[p1] != groups[p2]:
+					# group group1 and group2 together
+					for p, id in groups.items():
+						if id == groups[p2]:
+							groups[p] = groups[p1]
 
-			if len(grouped) <= 1:
-				del self.panels[i]
-				continue  # continue from same index i, which is a new panel (previous panel at index i has just been removed)
+		grouped = {}
+		for k, v in groups.items():
+			grouped[v] = grouped.get(v, []) + [k]
 
-			else:
-				# add new grouped panel, if not small
-				if not big_panel.is_small():
-					panels_to_add.append(big_panel)
+		for small_panels in grouped.values():
+			big_panel = Panel.from_xyrb(
+				self,
+				min(small_panels, key = lambda p: p.x).x,
+				min(small_panels, key = lambda p: p.y).y,
+				max(small_panels, key = lambda p: p.r).r,
+				max(small_panels, key = lambda p: p.b).b,
+			)
 
-					Debug.draw_panels(list(map(lambda k: self.panels[k], grouped)), Debug.colours['lightblue'])
-					Debug.draw_panels([big_panel], Debug.colours['green'])
-					Debug.add_image('Group small panels')
+			Debug.draw_panels([big_panel], Debug.colours['green'])
+			Debug.draw_panels(small_panels, Debug.colours['lightblue'])
 
-				# remove all panels in group
-				for k in reversed(grouped):
-					del self.panels[k]
+			self.panels.append(big_panel)
+			for p in small_panels:
+				self.panels.remove(p)
 
-			i += 1
-
-		for p in panels_to_add:
-			self.panels.append(p)
-
+		Debug.add_image('Group small panels')
 		Debug.add_step('Group small panels', self.get_infos())
 
 	# See if panels can be cut into several (two non-consecutive points are close)
