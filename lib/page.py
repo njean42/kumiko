@@ -210,8 +210,6 @@ class Page:
 		did_split = True
 		t1 = None
 		while did_split:
-			# self.merge_panels() TODO: reactivate? (messes with debug)
-
 			if t1:
 				print(f"took {(time.time_ns() - t1) / 10**9} seconds", file = sys.stderr)
 			t1 = time.time_ns()
@@ -219,33 +217,16 @@ class Page:
 			did_split = False
 			for p in sorted(self.panels, key = lambda p: p.area(), reverse = True):
 				new = p.split()
-				if new is None:
-					continue
+				if new is not None:
+					did_split = True
+					self.panels.remove(p)
+					self.panels += new
 
-				Debug.draw_contours(list(map(lambda n: n.polygon, new)), Debug.colours['blue'])
-
-				self_segments_coverage = p.segments_coverage(draw_segments = False)
-				first_new_coverage = new[0].segments_coverage()
-				second_new_coverage = new[1].segments_coverage()
-
-				# allow 10% loss in segments coverage
-				new_coverage_ok = (first_new_coverage['pct'] +
-									second_new_coverage['pct']) / 2 >= self_segments_coverage['pct'] - 0.1
-
-				ok_or_not = "" if new_coverage_ok else "NOT"
-				print(f"panel {p} ({self_segments_coverage['pct']:.0%}) was {ok_or_not} split into")
-
-				print(f"\t{new[0]} {first_new_coverage['pct']:.0%}")
-				print(f"\tand\n\t{new[1]} {second_new_coverage['pct']:.0%}")
-
-				if not new_coverage_ok:
-					continue
-
-				did_split = True
-				self.panels.remove(p)
-				self.panels += new
-
-				break
+					Debug.draw_contours(list(map(lambda n: n.polygon, new)), Debug.colours['blue'], with_hull = True)
+					for newp in new:
+						for s in newp.segments_coverage()['segments']:
+							Debug.draw_line(s.a, s.b, Debug.colours['green'])
+					break
 
 		Debug.add_image(
 			'Split contours (blue contours, gray polygon dots, purple nearby dots, green matching segments)'

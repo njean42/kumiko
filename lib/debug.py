@@ -164,7 +164,7 @@ class Debug:
 		return files_diff
 
 	@staticmethod
-	def draw_contours(contours, colour = 'auto'):
+	def draw_contours(contours, colour = 'auto', with_hull = False):
 		if not Debug.debug:
 			return
 		if Debug.contourSize is None:
@@ -176,8 +176,9 @@ class Debug:
 
 			cv.drawContours(Debug.img, [contours[i]], 0, colour, Debug.contourSize)
 
-			hull = cv.convexHull(contours[i])
-			cv.drawContours(Debug.img, [hull], 0, Debug.colours['yellow'], Debug.contourSize)
+			if with_hull:
+				hull = cv.convexHull(contours[i])
+				cv.drawContours(Debug.img, [hull], 0, Debug.colours['yellow'], Debug.contourSize)
 
 	@staticmethod
 	def draw_line(dot1, dot2, colour):

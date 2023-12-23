@@ -27,6 +27,7 @@ class Panel:
 		self.b = self.y + xywh[3]  # panel's bottom edge
 
 		self.polygon = polygon
+		self.coverage = None
 
 	def w(self):
 		return self.r - self.x
@@ -203,26 +204,12 @@ class Panel:
 		return max(possible_panels, key = lambda p: p.area()) if len(possible_panels) > 0 else self
 
 	def is_close(self, other):
-		c1x = self.x + self.w() / 2
-		c1y = self.y + self.h() / 2
-		c2x = other.x + other.w() / 2
-		c2y = other.y + other.h() / 2
+		min_dist_x = min(abs(self.x - other.r), abs(self.r - other.x))
+		min_dist_y = min(abs(self.y - other.b), abs(self.y - other.b))
 
-		return all(
-			[
-				abs(c1x - c2x) <= (self.w() + other.w()) * 0.75,
-				abs(c1y - c2y) <= (self.h() + other.h()) * 0.75,
-			]
-		)
+		max_dist = self.page.img_size[0] * self.page.small_panel_ratio
 
-# TODO which is_close is best?
-# def is_close(self, other):
-# 	min_dist_x = min(abs(self.x - other.r), abs(self.r - other.x))
-# 	min_dist_y = min(abs(self.y - other.b), abs(self.y - other.b))
-#
-# 	max_dist = self.page.img_size[0] * self.page.small_panel_ratio
-#
-# 	return all([min_dist_x <= max_dist, min_dist_y <= max_dist])
+		return all([min_dist_x <= max_dist, min_dist_y <= max_dist])
 
 	def bumps_into(self, other_panels):
 		for other in other_panels:
@@ -231,42 +218,6 @@ class Panel:
 
 		return False
 
-	def is_nearby(self, other):
-		c1x = self.x + self.w() / 2
-		c1y = self.y + self.h() / 2
-		c2x = other.x + other.w() / 2
-		c2y = other.y + other.h() / 2
-
-		return all(
-			[
-				abs(c1x - c2x) <= (self.w() + other.w()) * 0.75,
-				abs(c1y - c2y) <= (self.h() + other.h()) * 0.75,
-			]
-		)
-
-	# def max_distance_between_nearby_dots(self):
-	# 	# elements that join panels together (e.g. speech bubbles) will be ignored (cut out)
-	# 	# if their width and height is < min(panelwidth * ratio, panelheight * ratio)
-	# 	ratio = 0.25
-	# 	return min(self.w() * ratio, self.h() * ratio)
-
-	# def split_by_segment(self, dot1, dot2, max_gutter):
-	# 	p1 = p2 = None
-	# 	if abs(dot1[0] - dot2[0]) < abs(dot1[1] - dot2[1]):  # vertical line
-	# 		x = dot1[0]
-	# 		p1 = Panel(self.page, xywh = [self.x, self.y, x - self.x, self.h()])
-	# 		p2 = Panel(self.page, xywh = [x, self.y, self.r - x, self.h()])
-	# 	else:  # horizontal line
-	# 		y = dot1[1]
-	# 		p1 = Panel(self.page, xywh = [self.x, self.y, self.r, y - self.y])
-	# 		p2 = Panel(self.page, xywh = [self.x, y, self.r, self.b - y])
-	# 		return []
-	#
-	# 	return [p1, p2]
-
-	def max_distance_between_nearby_dots(self):
-		return int(max(self.page.img_size) * self.page.small_panel_ratio)
-
 	def split(self):
 		if self.polygon is None:
 			return None
@@ -274,7 +225,14 @@ class Panel:
 		if self.is_small():
 			return None
 
-		split_dist = self.max_distance_between_nearby_dots() / 2
+		coverage = self.segments_coverage()
+		if coverage['pct'] < 50 / 100:
+			return None
+
+		max_dist_nearby_dots_x = self.w() / 3
+		max_dist_nearby_dots_y = self.h() / 3
+		max_diagonal = math.sqrt(max_dist_nearby_dots_x**2 + max_dist_nearby_dots_y**2)
+		dots_along_lines_dist = max_diagonal / 2
 
 		# add dots along straight edges, so that a dot can be "nearby an edge"
 		polygon = np.ndarray(shape = (0, 1, 2), dtype = int, order = 'F')
@@ -287,11 +245,11 @@ class Panel:
 			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['gray'])
 
 			seg = Segment(dot1, dot2)
-			while (seg.dist() > split_dist):
+			while (seg.dist() > dots_along_lines_dist):
 				alpha_x = math.acos((seg.dist_x()) / seg.dist())
 				alpha_y = math.asin((seg.dist_y()) / seg.dist())
-				dist_x = int(math.cos(alpha_x) * split_dist)
-				dist_y = int(math.sin(alpha_y) * split_dist)
+				dist_x = int(math.cos(alpha_x) * dots_along_lines_dist)
+				dist_y = int(math.sin(alpha_y) * dots_along_lines_dist)
 
 				dot1 = [dot1[0] + dist_x, dot1[1] + dist_y]
 
@@ -304,21 +262,19 @@ class Panel:
 		nearby_dots = []
 		min_dots_between_nearby_dots = round(len(polygon) / 4)
 
-		# print(f"\tmax_distance_between_nearby_dots={self.max_distance_between_nearby_dots()}, min_dots_between_nearby_dots={min_dots_between_nearby_dots}, split_dist={split_dist}, panel={self}")
-
 		for i in range(len(polygon) - min_dots_between_nearby_dots):
 			for j in range(i + min_dots_between_nearby_dots, len(polygon)):
 				dot1 = polygon[i][0]
 				dot2 = polygon[j][0]
 				seg = Segment(dot1, dot2)
 
-				if seg.dist() < self.max_distance_between_nearby_dots():
+				if abs(seg.dist_x()) <= max_dist_nearby_dots_x and abs(seg.dist_y()) <= max_dist_nearby_dots_y:
 					nearby_dots.append([i, j])
+					# if dot1[0] == 674 and dot2[1] == 43:
+					# 	print(f"{seg.dist_x()} <= {max_dist_nearby_dots_x} and {seg.dist_y()} <= {max_dist_nearby_dots_y}")
 
 		if len(nearby_dots) == 0:
 			return None
-
-		# print(f"\t{len(nearby_dots)} nearby_dots")
 
 		splits = []
 		for dots in nearby_dots:
@@ -358,42 +314,54 @@ class Panel:
 			if panel1.overlaps(panel2):
 				continue
 
-			# print(f"\t{len(splits)} splits (panel {self})")
+			splits.append([panel1, panel2, (polygon[dots[0]][0], polygon[dots[1]][0])])
 
-			splits.append([panel1, panel2])
+		# only consider splits that create panel with good segments coverage
+		splits = list(filter(lambda split: self.coverage_ok(split), splits))
 
 		if len(splits) == 0:
 			return None
 
-		# for s in splits:
-		# 	print(f"{self} => {s[0]} + {s[1]}")
-
 		# return the split that creates the two most size-similar panels
-		return None if len(splits) == 0 else max(splits, key = lambda split: abs(split[0].area() - split[1].area()))
+		best_split = max(
+			splits, key = lambda split: split[0].segments_coverage()['pct'] + split[1].segments_coverage()['pct']
+		)
 
-	def segments_coverage(self, draw_segments = True):
+		split_panel1, split_panel2, nearby_dots = best_split
+		print(f"panel {self} ({self.segments_coverage()['pct']:.0%}) was split between dots {nearby_dots} into")
+		print(f"\t{split_panel1} {split_panel1.segments_coverage()['pct']:.0%}")
+		print(f"\tand\n\t{split_panel2} {split_panel2.segments_coverage()['pct']:.0%}")
+		print(f"\tmax_dist_nearby_dots = {max_dist_nearby_dots_x}, {max_dist_nearby_dots_y}")
+
+		return best_split[0:2]
+
+	# allow 10% loss in segments coverage
+	def coverage_ok(self, split):
+		return all(
+			[
+				split[0].segments_coverage()['pct'] >= self.segments_coverage()['pct'] - 10 / 100,
+				split[1].segments_coverage()['pct'] >= self.segments_coverage()['pct'] - 10 / 100,
+			]
+		)
+
+	def segments_coverage(self):
 		if self.polygon is None:
 			return -1
 
-		# print(f"segment coverage for panel {self}")
+		if self.coverage is not None:
+			return self.coverage
+
 		hull = cv.convexHull(self.polygon)
 
 		segments_match = []
 		for i, dot1 in enumerate(hull):
 			dot2 = hull[(i + 1) % len(hull)]
-
 			hull_segment = Segment(dot1[0], dot2[0])
 
 			for segment in self.page.segments:
 				s3 = hull_segment.intersect(segment)
-				if s3 is None:
-					continue
-
-				segments_match.append(s3)
-
-				# s3_length_sq = (s3[0][0]-s3[1][0])**2 + (s3[0][1]-s3[1][1])**2
-
-		# print(f"\tfound {len(segments_match)} segments in total − {list(map(lambda s: s.__str__(), segments_match))}")
+				if s3 is not None:
+					segments_match.append(s3)
 
 		unioned_segments = True
 		while (unioned_segments):
@@ -411,23 +379,19 @@ class Panel:
 					segments_match.append(s3)
 					del segments_match[j]
 					del segments_match[i]
-					# print(f"UNION'ed\n\t[IDX{i}]{s1} +\n\t[IDX{j}]{s2}\n\t=>\n\t{s3}")
 					break
 
 				if unioned_segments:
 					break
 
-		# print(f"\tmerged into {len(segments_match)}")
-
-		if draw_segments:
-			for s in segments_match:
-				Debug.draw_line(s.a, s.b, Debug.colours['green'])
-
 		segments_covered_distance = int(sum(map(lambda s: s.dist(), segments_match)))
 		hull_perimeter = int(cv.arcLength(hull, True))
 
-		return {
+		self.coverage = {
 			'segments_covered_distance': segments_covered_distance,
 			'perimeter': hull_perimeter,
-			'pct': segments_covered_distance / hull_perimeter
+			'pct': segments_covered_distance / hull_perimeter,
+			'segments': segments_match
 		}
+
+		return self.coverage
