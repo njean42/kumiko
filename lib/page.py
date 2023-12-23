@@ -7,6 +7,7 @@ import cv2 as cv
 import numpy as np
 
 from lib.panel import Panel
+from lib.segment import Segment
 from lib.debug import Debug
 
 
@@ -34,7 +35,7 @@ class Page:
 	def __init__(self, filename, numbering = None, debug = False, url = None, min_panel_size_ratio = None):
 		self.filename = filename
 		self.panels = []
-		self.background_color = '?'
+		self.segments = []
 
 		self.processing_time = None
 		t1 = time.time_ns()
@@ -111,7 +112,7 @@ class Page:
 		_, thresh = cv.threshold(self.sobel, 100, 255, cv.THRESH_BINARY)
 		self.contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
 
-		Debug.add_image("Thresholded image", img=thresh)
+		Debug.add_image("Thresholded image", img = thresh)
 
 	def get_segments(self):
 		self.segments = []
@@ -129,8 +130,8 @@ class Page:
 			b = y0 - y1
 			dist = math.sqrt(a**2 + b**2)
 			if dist >= 100:
-				self.segments.append([[x0,y0],[x1,y1]])
-				Debug.draw_line((x0, y0), (x1,y1), Debug.colours['green'])
+				self.segments.append(Segment([x0, y0], [x1, y1]))
+				Debug.draw_line((x0, y0), (x1, y1), Debug.colours['green'])
 
 		Debug.add_image("Segment Detector")
 
@@ -209,40 +210,47 @@ class Page:
 		did_split = True
 		t1 = None
 		while did_split:
-			self.merge_panels()
+			# self.merge_panels() TODO: reactivate? (messes with debug)
 
 			if t1:
-				print(f"took {(time.time_ns() - t1) / 10**9} seconds")
+				print(f"took {(time.time_ns() - t1) / 10**9} seconds", file = sys.stderr)
 			t1 = time.time_ns()
 
 			did_split = False
-			for p in sorted(self.panels, key=lambda p: p.area(), reverse=True):
+			for p in sorted(self.panels, key = lambda p: p.area(), reverse = True):
 				new = p.split()
-				if new is not None:
-					did_split = True
-					self.panels.remove(p)
-					self.panels += new
+				if new is None:
+					continue
 
-					print(f"panel {p} was split into {new[0]} and {new[1]}")
+				Debug.draw_contours(list(map(lambda n: n.polygon, new)), Debug.colours['blue'])
 
-					Debug.draw_contours(list(map(lambda n: n.polygon, new)), Debug.colours['blue'])
-					break
+				self_segments_coverage = p.segments_coverage(draw_segments = False)
+				first_new_coverage = new[0].segments_coverage()
+				second_new_coverage = new[1].segments_coverage()
 
-		Debug.add_image('Split contours (blue contours, green polygon dots, purple nearby dots)')
+				# allow 10% loss in segments coverage
+				new_coverage_ok = (first_new_coverage['pct'] +
+									second_new_coverage['pct']) / 2 >= self_segments_coverage['pct'] - 0.1
+
+				ok_or_not = "" if new_coverage_ok else "NOT"
+				print(f"panel {p} ({self_segments_coverage['pct']:.0%}) was {ok_or_not} split into")
+
+				print(f"\t{new[0]} {first_new_coverage['pct']:.0%}")
+				print(f"\tand\n\t{new[1]} {second_new_coverage['pct']:.0%}")
+
+				if not new_coverage_ok:
+					continue
+
+				did_split = True
+				self.panels.remove(p)
+				self.panels += new
+
+				break
+
+		Debug.add_image(
+			'Split contours (blue contours, gray polygon dots, purple nearby dots, green matching segments)'
+		)
 		Debug.add_step('Panels from split contours', self.get_infos())
-
-	# def dot_on_edge_of_panels(self, dot, max_gutter):
-	# 	on_panels = set()
-	# 	for p in self.panels:
-	# 		# NOTE: this only works for vertical and horizontal gutters
-	# 		if any([
-	# 			abs(dot[0] - p.x) < max_gutter or abs(dot[0] - p.r) < max_gutter,
-	# 			abs(dot[1] - p.y) < max_gutter or abs(dot[1] - p.b) < max_gutter,
-	# 			]):
-	# 			# print(f"dot {dot} is on panel {p.x}x{p.y}")
-	# 			on_panels.add(p)
- #
-	# 	return on_panels
 
 	def exclude_small_panels(self):
 		self.panels = list(filter(lambda p: not p.is_small(), self.panels))
@@ -276,7 +284,7 @@ class Page:
 	def merge_panels(self):
 		panels_to_remove = []
 		for i, p1 in enumerate(self.panels):
-			for j, p2 in enumerate(self.panels[i+1:]):
+			for j, p2 in enumerate(self.panels[i + 1:]):
 				if p1.contains(p2):
 					panels_to_remove.append(p2)
 					p1 = p1.merge(p2)

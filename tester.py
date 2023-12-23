@@ -6,8 +6,6 @@ import json
 import argparse
 import re
 import tempfile
-import time
-
 from lib.debug import Debug
 from lib.html import HTML
 
@@ -15,7 +13,7 @@ from lib.html import HTML
 class Tester:
 
 	files = []
-	git_repo = 'https://framagit.org/nicooo/kumiko'
+	git_repo = '.'
 	git_versions = [
 		# 'v1.0', 'v1.1', 'v1.1.1', 'v1.2', 'v1.2.1', 'v1.3', 'v1.4', 'v1.4.1',
 		'v1.4.2',
@@ -74,12 +72,7 @@ class Tester:
 
 				subprocess.run(['mkdir', '-p', os.path.join(self.savedir, git_version)], check = True)
 				jsonfile = os.path.join(self.savedir, git_version, os.path.basename(f) + '.json')
-
-				t1 = time.time_ns()
 				subprocess.run(args = [kumiko_bin, '-i', f, '-o', jsonfile, '--progress'], check = True)
-
-				elapsed = (time.time_ns() - t1) / pow(10, 9)
-				print(f"time elapsed: {elapsed:.2f} seconds")
 
 				if os.path.isdir(f) and not accepts_license_files:
 					for g in os.scandir(tmpfolder):

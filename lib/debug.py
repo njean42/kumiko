@@ -60,10 +60,6 @@ class Debug:
 		if not Debug.debug:
 			return
 
-		currstep = 'init'
-		if len(Debug.steps) > 0:
-			currstep = list(reversed(Debug.steps))[0]['name']
-
 		filename = str(Debug.imgID) + '-' + label + '.jpg'
 		Debug.imgID += 1
 		cv.imwrite(os.path.join('tests/results', filename), Debug.img if img is None else img)
@@ -71,6 +67,7 @@ class Debug:
 		# reinit image so we see only specific steps' contours/lines/dots
 		Debug.img = np.copy(Debug.base_img)
 
+		currstep = len(Debug.steps) - 1
 		if currstep not in Debug.images:
 			Debug.images[currstep] = []
 		Debug.images[currstep].append({'filename': filename, 'label': label})
@@ -84,8 +81,8 @@ class Debug:
 			j = i + 1
 
 			# Display debug images
-			if Debug.steps[i]['name'] in Debug.images:
-				html += HTML.imgbox(Debug.images[Debug.steps[i]['name']])
+			if i in Debug.images:
+				html += HTML.imgbox(Debug.images[i])
 
 			# Display panels diffs
 			files_diff = Debug.get_files_diff(images_dir, [Debug.steps[i]['infos']], [Debug.steps[j]['infos']])
@@ -159,7 +156,8 @@ class Debug:
 				files_diff[json1[p]['filename']] = {
 					'jsons': [[json1[p]], [json2[p]]],
 					'images_dir': images_dir,
-					'known_panels': [json.dumps(known_panels[0]), json.dumps(known_panels[1])],
+					'known_panels': [json.dumps(known_panels[0]),
+										json.dumps(known_panels[1])],
 					'diff_numbering_panels': diff_numbering,
 				}
 
@@ -178,23 +176,26 @@ class Debug:
 
 			cv.drawContours(Debug.img, [contours[i]], 0, colour, Debug.contourSize)
 
+			hull = cv.convexHull(contours[i])
+			cv.drawContours(Debug.img, [hull], 0, Debug.colours['yellow'], Debug.contourSize)
+
 	@staticmethod
-	def draw_line(dot1, dot2, colour = 'auto'):
+	def draw_line(dot1, dot2, colour):
 		if not Debug.debug:
 			return
 		if Debug.contourSize is None:
 			raise Exception("Fatal error, Debug.contourSize has not been defined")
 
-		cv.line(Debug.img, (dot1[0], dot1[1]), (dot2[0],dot2[1]), colour, Debug.contourSize, cv.LINE_AA)
+		cv.line(Debug.img, (dot1[0], dot1[1]), (dot2[0], dot2[1]), colour, Debug.contourSize, cv.LINE_AA)
 
 	@staticmethod
-	def draw_dot(x, y, colour = 'auto'):
+	def draw_dot(x, y, colour):
 		if not Debug.debug:
 			return
 		if Debug.contourSize is None:
 			raise Exception("Fatal error, Debug.contourSize has not been defined")
 
-		cv.circle(Debug.img,(x,y), Debug.contourSize * 2, colour, -1)
+		cv.circle(Debug.img, (x, y), Debug.contourSize * 2, colour, -1)
 
 	@staticmethod
 	def draw_panels(panels, colour):

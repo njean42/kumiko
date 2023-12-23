@@ -2,6 +2,7 @@ import math
 import cv2 as cv
 import numpy as np
 
+from lib.segment import Segment
 from lib.debug import Debug
 
 
@@ -9,7 +10,7 @@ class Panel:
 
 	@staticmethod
 	def from_xyrb(page, x, y, r, b):
-		return Panel(page, xywh=[x, y, r-x, b-y])
+		return Panel(page, xywh = [x, y, r - x, b - y])
 
 	def __init__(self, page, xywh = None, polygon = None):
 		self.page = page
@@ -199,7 +200,7 @@ class Panel:
 		possible_panels = list(filter(lambda p: not p.bumps_into(other_panels), possible_panels))
 
 		# take the largest merged panel
-		return max(possible_panels, key=lambda p: p.area()) if len(possible_panels) > 0 else self
+		return max(possible_panels, key = lambda p: p.area()) if len(possible_panels) > 0 else self
 
 	def is_close(self, other):
 		c1x = self.x + self.w() / 2
@@ -213,6 +214,15 @@ class Panel:
 				abs(c1y - c2y) <= (self.h() + other.h()) * 0.75,
 			]
 		)
+
+# TODO which is_close is best?
+# def is_close(self, other):
+# 	min_dist_x = min(abs(self.x - other.r), abs(self.r - other.x))
+# 	min_dist_y = min(abs(self.y - other.b), abs(self.y - other.b))
+#
+# 	max_dist = self.page.img_size[0] * self.page.small_panel_ratio
+#
+# 	return all([min_dist_x <= max_dist, min_dist_y <= max_dist])
 
 	def bumps_into(self, other_panels):
 		for other in other_panels:
@@ -234,10 +244,6 @@ class Panel:
 			]
 		)
 
-	@staticmethod
-	def dist(dot1, dot2):
-		return math.sqrt(pow(dot1[0] - dot2[0], 2) + pow(dot1[1] - dot2[1], 2))
-
 	# def max_distance_between_nearby_dots(self):
 	# 	# elements that join panels together (e.g. speech bubbles) will be ignored (cut out)
 	# 	# if their width and height is < min(panelwidth * ratio, panelheight * ratio)
@@ -255,11 +261,8 @@ class Panel:
 	# 		p1 = Panel(self.page, xywh = [self.x, self.y, self.r, y - self.y])
 	# 		p2 = Panel(self.page, xywh = [self.x, y, self.r, self.b - y])
 	# 		return []
- #
+	#
 	# 	return [p1, p2]
-
-	def segments_coverage(self):
-		pass
 
 	def max_distance_between_nearby_dots(self):
 		return int(max(self.page.img_size) * self.page.small_panel_ratio)
@@ -281,47 +284,44 @@ class Panel:
 			dot2 = self.polygon[j % len(self.polygon)][0]
 
 			polygon = np.append(polygon, [[dot1]], axis = 0)
-			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['green'])
+			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['gray'])
 
-			if Panel.dist(dot1, dot2) < split_dist:
-				continue
-
-			while (Panel.dist(dot1, dot2) > split_dist):
-				alpha_x = math.acos((dot2[0] - dot1[0]) / Panel.dist(dot1, dot2))
-				alpha_y = math.asin((dot2[1] - dot1[1]) / Panel.dist(dot1, dot2))
+			seg = Segment(dot1, dot2)
+			while (seg.dist() > split_dist):
+				alpha_x = math.acos((seg.dist_x()) / seg.dist())
+				alpha_y = math.asin((seg.dist_y()) / seg.dist())
 				dist_x = int(math.cos(alpha_x) * split_dist)
 				dist_y = int(math.sin(alpha_y) * split_dist)
 
 				dot1 = [dot1[0] + dist_x, dot1[1] + dist_y]
 
 				polygon = np.append(polygon, [[dot1]], axis = 0)
-				Debug.draw_dot(dot1[0], dot1[1], Debug.colours['green'])
+				Debug.draw_dot(dot1[0], dot1[1], Debug.colours['gray'])
 
-		# Find dots nearby to one another
+				seg = Segment(dot1, dot2)
+
+		# Find dots nearby one another
 		nearby_dots = []
 		min_dots_between_nearby_dots = round(len(polygon) / 4)
 
-		print(f"\tmax_distance_between_nearby_dots={self.max_distance_between_nearby_dots()}, min_dots_between_nearby_dots={min_dots_between_nearby_dots}, split_dist={split_dist}, panel={self}")
+		# print(f"\tmax_distance_between_nearby_dots={self.max_distance_between_nearby_dots()}, min_dots_between_nearby_dots={min_dots_between_nearby_dots}, split_dist={split_dist}, panel={self}")
 
 		for i in range(len(polygon) - min_dots_between_nearby_dots):
 			for j in range(i + min_dots_between_nearby_dots, len(polygon)):
 				dot1 = polygon[i][0]
 				dot2 = polygon[j][0]
+				seg = Segment(dot1, dot2)
 
-				if Panel.dist(dot1, dot2) < self.max_distance_between_nearby_dots():
+				if seg.dist() < self.max_distance_between_nearby_dots():
 					nearby_dots.append([i, j])
 
 		if len(nearby_dots) == 0:
 			return None
 
-		print(f"\t{len(nearby_dots)} nearby_dots")
+		# print(f"\t{len(nearby_dots)} nearby_dots")
 
 		splits = []
 		for dots in nearby_dots:
-			for i in dots:
-				dot = polygon[i][0]
-				Debug.draw_dot(dot[0], dot[1], Debug.colours['lightpurple'])
-
 			poly1len = len(polygon) - dots[1] + dots[0]
 			poly2len = dots[1] - dots[0]
 
@@ -358,12 +358,76 @@ class Panel:
 			if panel1.overlaps(panel2):
 				continue
 
-			print(f"\t{len(splits)} splits (panel {self})")
+			# print(f"\t{len(splits)} splits (panel {self})")
 
 			splits.append([panel1, panel2])
+
+		if len(splits) == 0:
+			return None
 
 		# for s in splits:
 		# 	print(f"{self} => {s[0]} + {s[1]}")
 
 		# return the split that creates the two most size-similar panels
-		return None if len(splits) == 0 else max(splits, key=lambda split: abs(split[0].area() - split[1].area()))
+		return None if len(splits) == 0 else max(splits, key = lambda split: abs(split[0].area() - split[1].area()))
+
+	def segments_coverage(self, draw_segments = True):
+		if self.polygon is None:
+			return -1
+
+		# print(f"segment coverage for panel {self}")
+		hull = cv.convexHull(self.polygon)
+
+		segments_match = []
+		for i, dot1 in enumerate(hull):
+			dot2 = hull[(i + 1) % len(hull)]
+
+			hull_segment = Segment(dot1[0], dot2[0])
+
+			for segment in self.page.segments:
+				s3 = hull_segment.intersect(segment)
+				if s3 is None:
+					continue
+
+				segments_match.append(s3)
+
+				# s3_length_sq = (s3[0][0]-s3[1][0])**2 + (s3[0][1]-s3[1][1])**2
+
+		# print(f"\tfound {len(segments_match)} segments in total − {list(map(lambda s: s.__str__(), segments_match))}")
+
+		unioned_segments = True
+		while (unioned_segments):
+			unioned_segments = False
+			for i, s1 in enumerate(segments_match):
+				for j, s2 in enumerate(segments_match):
+					if j <= i:
+						continue
+
+					s3 = s1.union(s2)
+					if s3 is None:
+						continue
+
+					unioned_segments = True
+					segments_match.append(s3)
+					del segments_match[j]
+					del segments_match[i]
+					# print(f"UNION'ed\n\t[IDX{i}]{s1} +\n\t[IDX{j}]{s2}\n\t=>\n\t{s3}")
+					break
+
+				if unioned_segments:
+					break
+
+		# print(f"\tmerged into {len(segments_match)}")
+
+		if draw_segments:
+			for s in segments_match:
+				Debug.draw_line(s.a, s.b, Debug.colours['green'])
+
+		segments_covered_distance = int(sum(map(lambda s: s.dist(), segments_match)))
+		hull_perimeter = int(cv.arcLength(hull, True))
+
+		return {
+			'segments_covered_distance': segments_covered_distance,
+			'perimeter': hull_perimeter,
+			'pct': segments_covered_distance / hull_perimeter
+		}
