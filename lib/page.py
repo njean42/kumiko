@@ -156,7 +156,6 @@ class Page:
 
 	# Group small panels that are close together, into bigger ones
 	def group_small_panels(self):
-
 		small_panels = list(filter(lambda p: p.is_small(), self.panels))
 		groups = {}
 		group_id = 0
@@ -196,12 +195,12 @@ class Page:
 				max(small_panels, key = lambda p: p.b).b,
 			)
 
-			Debug.draw_panels([big_panel], Debug.colours['green'])
-			Debug.draw_panels(small_panels, Debug.colours['lightblue'])
-
 			self.panels.append(big_panel)
 			for p in small_panels:
 				self.panels.remove(p)
+
+			Debug.draw_panels(small_panels, Debug.colours['lightblue'])
+			Debug.draw_panels([big_panel], Debug.colours['red'])
 
 		Debug.add_image('Group small panels')
 		Debug.add_step('Group small panels', self.get_infos())
@@ -209,12 +208,7 @@ class Page:
 	# See if panels can be cut into several (two non-consecutive points are close)
 	def split_panels(self):
 		did_split = True
-		t1 = None
 		while did_split:
-			if t1:
-				print(f"took {(time.time_ns() - t1) / 10**9} seconds", file = sys.stderr)
-			t1 = time.time_ns()
-
 			did_split = False
 			for p in sorted(self.panels, key = lambda p: p.area(), reverse = True):
 				new = p.split()

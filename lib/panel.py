@@ -204,15 +204,22 @@ class Panel:
 		return max(possible_panels, key = lambda p: p.area()) if len(possible_panels) > 0 else self
 
 	def is_close(self, other):
-		min_dist_x = min(abs(self.x - other.r), abs(self.r - other.x))
-		min_dist_y = min(abs(self.y - other.b), abs(self.y - other.b))
+		c1x = self.x + self.w() / 2
+		c1y = self.y + self.h() / 2
+		c2x = other.x + other.w() / 2
+		c2y = other.y + other.h() / 2
 
-		max_dist = self.page.img_size[0] * self.page.small_panel_ratio
-
-		return all([min_dist_x <= max_dist, min_dist_y <= max_dist])
+		return all(
+			[
+				abs(c1x - c2x) <= (self.w() + other.w()) * 0.75,
+				abs(c1y - c2y) <= (self.h() + other.h()) * 0.75,
+			]
+		)
 
 	def bumps_into(self, other_panels):
 		for other in other_panels:
+			if other == self:
+				continue
 			if self.overlaps(other):
 				return True
 
@@ -327,11 +334,11 @@ class Panel:
 			splits, key = lambda split: split[0].segments_coverage()['pct'] + split[1].segments_coverage()['pct']
 		)
 
-		split_panel1, split_panel2, nearby_dots = best_split
-		print(f"panel {self} ({self.segments_coverage()['pct']:.0%}) was split between dots {nearby_dots} into")
-		print(f"\t{split_panel1} {split_panel1.segments_coverage()['pct']:.0%}")
-		print(f"\tand\n\t{split_panel2} {split_panel2.segments_coverage()['pct']:.0%}")
-		print(f"\tmax_dist_nearby_dots = {max_dist_nearby_dots_x}, {max_dist_nearby_dots_y}")
+		# split_panel1, split_panel2, nearby_dots = best_split
+		# print(f"panel {self} ({self.segments_coverage()['pct']:.0%}) was split between dots {nearby_dots} into")
+		# print(f"\t{split_panel1} {split_panel1.segments_coverage()['pct']:.0%}")
+		# print(f"\tand\n\t{split_panel2} {split_panel2.segments_coverage()['pct']:.0%}")
+		# print(f"\tmax_dist_nearby_dots = {max_dist_nearby_dots_x}, {max_dist_nearby_dots_y}")
 
 		return best_split[0:2]
 
