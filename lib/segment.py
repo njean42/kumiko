@@ -37,7 +37,7 @@ class Segment:
 
 		# angle too big ?
 		angle = self.angle_between_segments(other)
-		if angle > 10:
+		if angle > 10 and abs(angle - 180) > 10:
 			if dbg: print(f"angle too big {angle}")
 			return None
 
