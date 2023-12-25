@@ -347,7 +347,17 @@ class Panel:
 				# 	Debug.add_image("{panel1} overlaps {panel2}")
 				continue
 
-			splits.append([panel1, panel2, (polygon[dots[0]][0], polygon[dots[1]][0])])
+			split = [panel1, panel2]
+			split.sort(key=lambda p: p.x)
+			splits.append(tuple(split))
+
+		# deduplicate splits
+		for i in reversed(range(0, len(splits))):
+			split1 = splits[i]
+			for split2 in splits[0:i]:
+				if split1 == split2:
+					splits.remove(split1)
+					break
 
 		# only consider splits that create panel with good segments coverage
 		splits = list(filter(lambda split: self.coverage_ok(split), splits))
@@ -360,8 +370,8 @@ class Panel:
 			splits, key = lambda split: split[0].segments_coverage()['pct'] + split[1].segments_coverage()['pct']
 		)
 
-		split_panel1, split_panel2, nearby_dots = best_split
-		print(f"panel {self} ({self.segments_coverage()['pct']:.0%}) was split between dots {nearby_dots} into")
+		split_panel1, split_panel2 = best_split
+		print(f"panel {self} ({self.segments_coverage()['pct']:.0%}) was split into")
 		print(f"\t{split_panel1} {split_panel1.segments_coverage()['pct']:.0%}")
 		print(f"\tand\n\t{split_panel2} {split_panel2.segments_coverage()['pct']:.0%}")
 		print(f"\tmax_dist_nearby_dots = {max_dist_nearby_dots_x}, {max_dist_nearby_dots_y}")
@@ -370,7 +380,7 @@ class Panel:
 
 	# allow 15% loss in segments coverage
 	def coverage_ok(self, split):
-		split_panel1, split_panel2, _ = split
+		split_panel1, split_panel2 = split
 
 		print(f"panel {self} MAY BE split into\n\t{split_panel1}\tand\n\t{split_panel2}")
 
