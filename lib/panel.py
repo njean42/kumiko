@@ -166,16 +166,22 @@ class Panel:
 		all_top = list(filter(lambda p: p.b <= self.y and p.same_col(self), self.page.panels))
 		return max(all_top, key = lambda p: p.b) if all_top else None
 
-	def find_left_panel(self):
-		all_left = list(filter(lambda p: p.r <= self.x and p.same_row(self), self.page.panels))
-		return max(all_left, key = lambda p: p.r) if all_left else None
-
 	def find_bottom_panel(self):
 		all_bottom = list(filter(lambda p: p.y >= self.b and p.same_col(self), self.page.panels))
 		return min(all_bottom, key = lambda p: p.y) if all_bottom else None
 
+	def find_all_left_panels(self):
+		return list(filter(lambda p: p.r <= self.x and p.same_row(self), self.page.panels))
+
+	def find_left_panel(self):
+		all_left = self.find_all_left_panels()
+		return max(all_left, key = lambda p: p.r) if all_left else None
+
+	def find_all_right_panels(self):
+		return list(filter(lambda p: p.x >= self.r and p.same_row(self), self.page.panels))
+
 	def find_right_panel(self):
-		all_right = list(filter(lambda p: p.x >= self.r and p.same_row(self), self.page.panels))
+		all_right = self.find_all_right_panels()
 		return min(all_right, key = lambda p: p.x) if all_right else None
 
 	def find_neighbour_panel(self, d):
@@ -348,7 +354,7 @@ class Panel:
 				continue
 
 			split = [panel1, panel2]
-			split.sort(key=lambda p: p.x)
+			split.sort(key = lambda p: p.x)
 			splits.append(tuple(split))
 
 		# deduplicate splits

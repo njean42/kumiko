@@ -205,7 +205,7 @@ class Page:
 
 		for small_panels in grouped.values():
 			big_hull = cv.convexHull(np.concatenate(list(map(lambda p: p.polygon, small_panels))))
-			big_panel = Panel(page = self, polygon=big_hull)
+			big_panel = Panel(page = self, polygon = big_hull)
 
 			self.panels.append(big_panel)
 			for p in small_panels:
@@ -341,7 +341,8 @@ class Page:
 			changes = 0
 			for i, p in enumerate(self.panels):
 				neighbours_before = [p.find_top_panel()]
-				neighbours_before.append(p.find_right_panel() if self.numbering == "rtl" else p.find_left_panel())
+				neighbours_before += p.find_all_right_panels() if self.numbering == "rtl" else p.find_all_left_panels()
+
 				for neighbour in neighbours_before:
 					if neighbour is None:
 						continue
