@@ -115,23 +115,38 @@ class Page:
 		Debug.add_image("Thresholded image", img = thresh)
 
 	def get_segments(self):
-		self.segments = []
+		self.segments = None
 
 		seg = np.copy(self.img)
 		lsd = cv.createLineSegmentDetector(0)
 		dlines = lsd.detect(self.gray)
-		for dline in dlines[0]:
-			x0 = int(round(dline[0][0]))
-			y0 = int(round(dline[0][1]))
-			x1 = int(round(dline[0][2]))
-			y1 = int(round(dline[0][3]))
 
-			a = x0 - x1
-			b = y0 - y1
-			dist = math.sqrt(a**2 + b**2)
-			if dist >= 100:
-				self.segments.append(Segment([x0, y0], [x1, y1]))
-				Debug.draw_line((x0, y0), (x1, y1), Debug.colours['green'])
+		min_dist = min(self.img_size) * self.small_panel_ratio
+
+		while self.segments is None or len(self.segments) > 500:
+			# print(f"looking for segments of length >= {int(min_dist)}")
+			self.segments = []
+
+			for dline in dlines[0]:
+				x0 = int(round(dline[0][0]))
+				y0 = int(round(dline[0][1]))
+				x1 = int(round(dline[0][2]))
+				y1 = int(round(dline[0][3]))
+
+				a = x0 - x1
+				b = y0 - y1
+				dist = math.sqrt(a**2 + b**2)
+				if dist >= min_dist:
+					self.segments.append(Segment([x0, y0], [x1, y1]))
+
+			min_dist *= 1.1
+
+		print(f"Page segments before: {len(self.segments)}")
+		Segment.union_all(self.segments)
+		print(f"Page segments after: {len(self.segments)}")
+
+		for s in self.segments:
+			Debug.draw_line(s.a, s.b, Debug.colours['green'])
 
 		Debug.add_image("Segment Detector")
 
@@ -202,7 +217,8 @@ class Page:
 			Debug.draw_panels(small_panels, Debug.colours['lightblue'])
 			Debug.draw_panels([big_panel], Debug.colours['red'])
 
-		Debug.add_image('Group small panels')
+		if group_id > 0:
+			Debug.add_image('Group small panels')
 		Debug.add_step('Group small panels', self.get_infos())
 
 	# See if panels can be cut into several (two non-consecutive points are close)
@@ -223,10 +239,12 @@ class Page:
 							Debug.draw_line(s.a, s.b, Debug.colours['green'])
 					break
 
-		Debug.add_image(
-			'Split contours (blue contours, gray polygon dots, purple nearby dots, green matching segments)'
-		)
-		Debug.add_step('Panels from split contours', self.get_infos())
+			if did_split:
+				Debug.add_image(
+					'Split contours (blue contours, gray polygon dots, purple nearby dots, green matching segments)'
+				)
+
+		Debug.add_step(f"Panels from split contours ({len(self.segments)} segments)", self.get_infos())
 
 	def exclude_small_panels(self):
 		self.panels = list(filter(lambda p: not p.is_small(), self.panels))
@@ -322,7 +340,7 @@ class Page:
 	# Fix panels simple sorting (issue #12)
 	def fix_panels_numbering(self):
 		changes = 1
-		while (changes):
+		while changes:
 			changes = 0
 			for i, p in enumerate(self.panels):
 				neighbours_before = [p.find_top_panel()]

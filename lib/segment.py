@@ -32,6 +32,9 @@ class Segment:
 	def bottom(self):
 		return max(self.a[1], self.b[1])
 
+	def to_xyrb(self):
+		return [self.left(), self.top(), self.right(), self.bottom()]
+
 	def intersect(self, other):
 		dbg = False
 
@@ -104,6 +107,29 @@ class Segment:
 
 	def angle(self):
 		return math.atan(self.dist_y() / self.dist_x()) if self.dist_x() != 0 else math.pi / 2
+
+	@staticmethod
+	def union_all(segments):
+		unioned_segments = True
+		while (unioned_segments):
+			unioned_segments = False
+			for i, s1 in enumerate(segments):
+				for j, s2 in enumerate(segments):
+					if j <= i:
+						continue
+
+					s3 = s1.union(s2)
+					if s3 is None:
+						continue
+
+					unioned_segments = True
+					segments.append(s3)
+					del segments[j]
+					del segments[i]
+					break
+
+				if unioned_segments:
+					break
 
 
 def point_on_line(a, b, p):
