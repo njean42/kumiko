@@ -105,6 +105,8 @@ class Page:
 
 		self.fix_panels_numbering()
 
+		self.group_big_panels()
+
 		self.processing_time = int((time.time_ns() - t1) / 10**7) / 100
 
 	def get_contours(self):
@@ -202,20 +204,15 @@ class Page:
 			grouped[v] = grouped.get(v, []) + [k]
 
 		for small_panels in grouped.values():
-			big_panel = Panel.from_xyrb(
-				self,
-				min(small_panels, key = lambda p: p.x).x,
-				min(small_panels, key = lambda p: p.y).y,
-				max(small_panels, key = lambda p: p.r).r,
-				max(small_panels, key = lambda p: p.b).b,
-			)
+			big_hull = cv.convexHull(np.concatenate(list(map(lambda p: p.polygon, small_panels))))
+			big_panel = Panel(page = self, polygon=big_hull)
 
 			self.panels.append(big_panel)
 			for p in small_panels:
 				self.panels.remove(p)
 
-			Debug.draw_panels(small_panels, Debug.colours['lightblue'])
-			Debug.draw_panels([big_panel], Debug.colours['red'])
+			Debug.draw_contours(list(map(lambda p: p.polygon, small_panels)), Debug.colours['lightblue'])
+			Debug.draw_contours([big_panel.polygon], Debug.colours['red'])
 
 		if group_id > 0:
 			Debug.add_image('Group small panels')
@@ -357,3 +354,38 @@ class Page:
 					break  # start a new whole loop with reordered panels
 
 		Debug.add_step('Numbering fixed', self.get_infos())
+
+	# group big panels together
+	def group_big_panels(self):
+		grouped = True
+		while grouped:
+			grouped = False
+			for i, p1 in enumerate(self.panels):
+				for p2 in self.panels[i + 1:]:
+					p3 = p1.group_with(p2)
+
+					other_panels = [p for p in self.panels if p not in [p1, p2]]
+					if p3.bumps_into(other_panels):
+						continue
+
+					# are there big segments in this panel?
+					segments = set()
+					for s in self.segments:
+						if p3.contains_segment(s) and s.dist() > p3.diagonal().dist() / 5:
+							segments.add(s)
+
+					# print(f"found {len(segments)} segments in panel {p3}, with sizes {list(map(lambda s: int(s.dist()), segments))}")
+
+					if len(segments) > 0:  # maybe allow a small number of big segments here?
+						continue
+
+					self.panels.append(p3)
+					self.panels.remove(p1)
+					self.panels.remove(p2)
+					grouped = True
+					break
+
+				if grouped:
+					break
+
+		Debug.add_step('Group big panels', self.get_infos())
