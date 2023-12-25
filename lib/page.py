@@ -144,7 +144,7 @@ class Page:
 			min_dist *= 1.1
 
 		print(f"Page segments before: {len(self.segments)}")
-		Segment.union_all(self.segments)
+		self.segments = Segment.union_all(self.segments)
 		print(f"Page segments after: {len(self.segments)}")
 
 		for s in self.segments:

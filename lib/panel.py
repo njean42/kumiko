@@ -426,7 +426,7 @@ class Panel:
 				if s3 is not None:
 					segments_match.append(s3)
 
-		Segment.union_all(segments_match)
+		segments_match = Segment.union_all(segments_match)
 
 		segments_covered_distance = int(sum(map(lambda s: s.dist(), segments_match)))
 

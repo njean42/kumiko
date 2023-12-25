@@ -111,25 +111,29 @@ class Segment:
 	@staticmethod
 	def union_all(segments):
 		unioned_segments = True
-		while (unioned_segments):
+		while unioned_segments:
 			unioned_segments = False
+			dedup_segments = []
+			used = {}
 			for i, s1 in enumerate(segments):
-				for j, s2 in enumerate(segments):
-					if j <= i:
+				for s2 in segments[i+1:]:
+					if used.get(s2):
 						continue
 
 					s3 = s1.union(s2)
-					if s3 is None:
-						continue
+					if s3 is not None:
+						unioned_segments = True
+						dedup_segments += [s3]
+						used[s1] = True
+						used[s2] = True
+						break
 
-					unioned_segments = True
-					segments.append(s3)
-					del segments[j]
-					del segments[i]
-					break
+				if not used.get(s1):
+					dedup_segments += [s1]
 
-				if unioned_segments:
-					break
+			segments = dedup_segments
+
+		return dedup_segments
 
 
 def point_on_line(a, b, p):
