@@ -73,6 +73,7 @@ class Page:
 
 		self.gray = cv.cvtColor(self.img, cv.COLOR_BGR2GRAY)
 		Debug.add_image('Shades of gray', img = self.gray)
+		Debug.show_time("Shades of gray")
 
 		# https://docs.opencv.org/3.4/d2/d2c/tutorial_sobel_derivatives.html
 		ddepth = cv.CV_16S
@@ -86,6 +87,7 @@ class Page:
 
 		self.sobel = cv.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
 		Debug.add_image('Sobel filter applied', img = self.sobel)
+		Debug.show_time("Sobel filter")
 
 		self.get_contours()
 		self.get_segments()
@@ -112,22 +114,29 @@ class Page:
 	def get_contours(self):
 		# Black background: values above 100 will be black, the rest white
 		_, thresh = cv.threshold(self.sobel, 100, 255, cv.THRESH_BINARY)
+		Debug.show_time("Image threshhold")
+
 		self.contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)[-2:]
 
 		Debug.add_image("Thresholded image", img = thresh)
+		Debug.show_time("Get contours")
 
 	def get_segments(self):
 		self.segments = None
 
-		seg = np.copy(self.img)
 		lsd = cv.createLineSegmentDetector(0)
 		dlines = lsd.detect(self.gray)
+
+		Debug.show_time("Detected segments")
 
 		min_dist = min(self.img_size) * self.small_panel_ratio
 
 		while self.segments is None or len(self.segments) > 500:
 			# print(f"looking for segments of length >= {int(min_dist)}")
 			self.segments = []
+
+			if dlines is None or dlines[0] is None:
+				break
 
 			for dline in dlines[0]:
 				x0 = int(round(dline[0][0]))
@@ -144,13 +153,14 @@ class Page:
 			min_dist *= 1.1
 
 		print(f"Page segments before: {len(self.segments)}")
-		self.segments = Segment.union_all(self.segments)
+		self.segments = Segment.union_all(self.segments, self.max_gutter())
 		print(f"Page segments after: {len(self.segments)}")
 
 		for s in self.segments:
 			Debug.draw_line(s.a, s.b, Debug.colours['green'])
 
 		Debug.add_image("Segment Detector")
+		Debug.show_time("Compiled segments")
 
 	# Get (square) panels out of initial contours
 	def get_initial_panels(self):
@@ -224,21 +234,23 @@ class Page:
 		while did_split:
 			did_split = False
 			for p in sorted(self.panels, key = lambda p: p.area(), reverse = True):
-				new = p.split()
-				if new is not None:
+				split = p.split()
+				if split is not None:
 					did_split = True
 					self.panels.remove(p)
-					self.panels += new
+					self.panels += split.subpanels
 
-					Debug.draw_contours(list(map(lambda n: n.polygon, new)), Debug.colours['blue'], with_hull = True)
-					for newp in new:
-						for s in newp.segments_coverage()['segments']:
-							Debug.draw_line(s.a, s.b, Debug.colours['green'])
+					Debug.draw_contours(list(map(lambda n: n.polygon, split.subpanels)), Debug.colours['blue'])
+
+					Debug.draw_line(split.segment.a, split.segment.b, Debug.colours['red'])
+					print(
+						f"split segment has covered {split.segments_coverage()} {int(split.covered_dist)} / length {int(split.segment.dist())} {split.segment}"
+					)
 					break
 
 			if did_split:
 				Debug.add_image(
-					'Split contours (blue contours, gray polygon dots, purple nearby dots, green matching segments)'
+					'Split contours (blue contours, red split-segment, gray polygon dots, purple nearby dots)'
 				)
 
 		Debug.add_step(f"Panels from split contours ({len(self.segments)} segments)", self.get_infos())

@@ -91,8 +91,7 @@ class Panel:
 		return self.w() * self.h()
 
 	def __str__(self):
-		cov = self.segments_coverage()
-		return f"{self.x}x{self.y}-{self.r}x{self.b}({cov['pct']:.0%}={cov['segments_covered_distance']}/{cov['perimeter']})"
+		return f"{self.x}x{self.y}-{self.r}x{self.b}"
 
 	def __hash__(self):
 		return hash(self.__str__())
@@ -258,12 +257,6 @@ class Panel:
 		if self.is_small():
 			return None
 
-		coverage = self.segments_coverage()
-		if coverage['pct'] < 50 / 100:
-			#print(f"NOT COVERED ENOUGH panel {self}, coverage {coverage}")
-			# Debug.draw_contours([self.polygon], Debug.colours['red'], with_hull=True)
-			return None
-
 		max_dist_nearby_dots_x = int(self.w() / 3)
 		max_dist_nearby_dots_y = int(self.h() / 3)
 		max_diagonal = math.sqrt(max_dist_nearby_dots_x**2 + max_dist_nearby_dots_y**2)
@@ -305,8 +298,8 @@ class Panel:
 
 				if abs(seg.dist_x()) <= max_dist_nearby_dots_x and abs(seg.dist_y()) <= max_dist_nearby_dots_y:
 					nearby_dots.append([i, j])
-					# if dot1[0] == 674 and dot2[1] == 43:
-					# 	print(f"{seg.dist_x()} <= {max_dist_nearby_dots_x} and {seg.dist_y()} <= {max_dist_nearby_dots_y}")
+					Debug.draw_dot(dot1[0], dot1[1], Debug.colours['lightpurple'])
+					Debug.draw_dot(dot2[0], dot2[1], Debug.colours['lightpurple'])
 
 		if len(nearby_dots) == 0:
 			return None
@@ -336,10 +329,6 @@ class Panel:
 			panel1 = Panel(self.page, polygon = poly1)
 			panel2 = Panel(self.page, polygon = poly2)
 
-			for i in dots:
-				dot = polygon[i][0]
-				Debug.draw_dot(dot[0], dot[1], Debug.colours['lightpurple'])
-
 			if panel1.is_small() or panel2.is_small():
 				continue
 
@@ -353,91 +342,37 @@ class Panel:
 				# 	Debug.add_image("{panel1} overlaps {panel2}")
 				continue
 
-			split = [panel1, panel2]
-			split.sort(key = lambda p: p.x)
-			splits.append(tuple(split))
+			split_segment = Segment.along_polygon(polygon, dots[0], dots[1])
+			splits.append(Split(self, panel1, panel2, split_segment))
 
-		# deduplicate splits
-		for i in reversed(range(0, len(splits))):
-			split1 = splits[i]
-			for split2 in splits[0:i]:
-				if split1 == split2:
-					splits.remove(split1)
-					break
+		# weak_splits = list(filter(lambda split: split.segments_coverage() <= 50/100, splits))
+		# for split in weak_splits:
+		# 	if split.segment.dist() > 10: # and split.segments_coverage() > 1/100:
+		# 		Debug.draw_contours(list(map(lambda n: n.polygon, split.subpanels)), Debug.colours['blue'])
+		# 		Debug.draw_line(split.segment.a, split.segment.b, Debug.colours['red'])
+		# 		Debug.add_image(f"Weak Split {split.segment} {int(split.covered_dist)} / {int(split.segment.dist())} = {split.segments_coverage():.0%}")
 
-		# only consider splits that create panel with good segments coverage
-		splits = list(filter(lambda split: self.coverage_ok(split), splits))
+		splits = list(filter(lambda split: split.segments_coverage() > 50 / 100, splits))
 
 		if len(splits) == 0:
 			return None
 
-		# return the split that creates the two most size-similar panels # TODO wrong comment
-		best_split = max(
-			splits, key = lambda split: split[0].segments_coverage()['pct'] + split[1].segments_coverage()['pct']
-		)
+		# return the split that best matches lines (panel edges)
+		best_split = max(splits, key = lambda split: split.covered_dist)
 
-		split_panel1, split_panel2 = best_split
-		print(f"panel {self} ({self.segments_coverage()['pct']:.0%}) was split into")
-		print(f"\t{split_panel1} {split_panel1.segments_coverage()['pct']:.0%}")
-		print(f"\tand\n\t{split_panel2} {split_panel2.segments_coverage()['pct']:.0%}")
-		print(f"\tmax_dist_nearby_dots = {max_dist_nearby_dots_x}, {max_dist_nearby_dots_y}")
+		return best_split
 
-		return best_split[0:2]
 
-	# allow 15% loss in segments coverage
-	def coverage_ok(self, split):
-		split_panel1, split_panel2 = split
+class Split:
 
-		print(f"panel {self} MAY BE split into\n\t{split_panel1}\tand\n\t{split_panel2}")
+	def __init__(self, panel, subpanel1, subpanel2, split_segment):
+		self.panel = panel
+		self.subpanels = [subpanel1, subpanel2]
+		self.segment = split_segment
 
-		#Debug.draw_contours(list(map(lambda p: p.polygon, [split_panel1, split_panel2])), Debug.colours['blue'])
-		#for s in split_panel1.segments_coverage()['segments']:
-		#	Debug.draw_line(s.a, s.b, Debug.colours['green'])
-		#for s in split_panel2.segments_coverage()['segments']:
-		#	Debug.draw_line(s.a, s.b, Debug.colours['lightblue'])
-		#Debug.add_image(f"subpanels {split_panel1} and {split_panel2}")
-
-		return all(
-			[
-				split[0].segments_coverage()['pct'] >= 75 / 100,
-				split[1].segments_coverage()['pct'] >= 75 / 100,
-			]
-		)
+		matching_segments = self.segment.intersect_all(self.panel.page.segments, self.panel.page.max_gutter())
+		self.covered_dist = sum(map(lambda s: s.dist(), matching_segments))
 
 	def segments_coverage(self):
-		if self.polygon is None:
-			return {
-				'segments_covered_distance': 0,
-				'perimeter': self.w() * 2 + self.h() * 2,
-				'pct': 0,
-				'segments': set()
-			}
-
-		if self.coverage is not None:
-			return self.coverage
-
-		segments_match = []
-		for i, dot1 in enumerate(self.polygon):
-			dot2 = self.polygon[(i + 1) % len(self.polygon)]
-			hull_segment = Segment(dot1[0], dot2[0])
-
-			for segment in self.page.segments:
-				s3 = hull_segment.intersect(segment)
-				if s3 is not None:
-					segments_match.append(s3)
-
-		segments_match = Segment.union_all(segments_match)
-
-		segments_covered_distance = int(sum(map(lambda s: s.dist(), segments_match)))
-
-		hull = cv.convexHull(self.polygon)
-		hull_perimeter = int(cv.arcLength(hull, True))
-
-		self.coverage = {
-			'segments_covered_distance': segments_covered_distance,
-			'perimeter': hull_perimeter,
-			'pct': segments_covered_distance / hull_perimeter,
-			'segments': segments_match
-		}
-
-		return self.coverage
+		segment_dist = self.segment.dist()
+		return self.covered_dist / segment_dist if segment_dist else 0

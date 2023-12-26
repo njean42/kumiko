@@ -1,6 +1,7 @@
 import os
 import json
 import copy
+import re
 import time
 import cv2 as cv
 import numpy as np
@@ -53,6 +54,17 @@ class Debug:
 			'infos': copy.deepcopy(infos),
 		})
 
+	@staticmethod
+	def show_time(name):
+		if not Debug.debug:
+			return
+
+		Debug.prev_time = Debug.time
+		Debug.time = time.time_ns()
+
+		elapsed = Debug.time - Debug.prev_time
+		print(f"{name} -- time elapsed: {elapsed/pow(10,9):.2f} seconds")
+
 	imgID = 0
 
 	@staticmethod
@@ -60,7 +72,8 @@ class Debug:
 		if not Debug.debug:
 			return
 
-		filename = str(Debug.imgID) + '-' + label + '.jpg'
+		clean_filename = re.sub(r'\W', '-', label)
+		filename = f"{Debug.imgID}-{clean_filename}.jpg"
 		Debug.imgID += 1
 		cv.imwrite(os.path.join('tests/results', filename), Debug.img if img is None else img)
 
