@@ -153,13 +153,31 @@ class Panel:
 		# self contains other if their overlapping area is more than 50% of other's area
 		return o_panel.area() / other.area() > 0.50
 
-		return self.contains(segment_panel)
-
 	def same_row(self, other):
-		return other.y <= self.y <= other.b or self.y <= other.y <= self.b
+		above, below = sorted([self, other], key=lambda p: p.y)
+
+		if below.y > above.b:  # stricly above
+			return False
+
+		if below.b < above.b: # contained
+			return True
+
+		# intersect
+		intersection_y = min(above.b, below.b) - below.y
+		return intersection_y / min(above.h(), below.h()) >= 1/3
 
 	def same_col(self, other):
-		return other.x <= self.x <= other.r or self.x <= other.x <= self.r
+		left, right = sorted([self, other], key=lambda p: p.x)
+
+		if right.x > left.r:  # stricly left
+			return False
+
+		if right.r < left.r: # contained
+			return True
+
+		# intersect
+		intersection_x = min(left.r, right.r) - right.x
+		return intersection_x / min(left.w(), right.w()) >= 1/3
 
 	def find_top_panel(self):
 		all_top = list(filter(lambda p: p.b <= self.y and p.same_col(self), self.page.panels))

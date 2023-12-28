@@ -105,9 +105,9 @@ class Page:
 		if len(self.panels) == 0:
 			self.panels.append(Panel(page = self, xywh = [0, 0, self.img_size[0], self.img_size[1]]))
 
-		self.fix_panels_numbering()
-
 		self.group_big_panels()
+
+		self.fix_panels_numbering()
 
 		self.processing_time = int((time.time_ns() - t1) / 10**7) / 100
 
