@@ -14,11 +14,13 @@ class Segment:
 	def dist(self):
 		return math.sqrt(self.dist_x()**2 + self.dist_y()**2)
 
-	def dist_x(self):
-		return self.b[0] - self.a[0]
+	def dist_x(self, keep_sign=False):
+		dist = self.b[0] - self.a[0]
+		return dist if keep_sign else abs(dist)
 
-	def dist_y(self):
-		return self.b[1] - self.a[1]
+	def dist_y(self, keep_sign=False):
+		dist = self.b[1] - self.a[1]
+		return dist if keep_sign else abs(dist)
 
 	def left(self):
 		return min(self.a[0], self.b[0])
@@ -34,6 +36,12 @@ class Segment:
 
 	def to_xyrb(self):
 		return [self.left(), self.top(), self.right(), self.bottom()]
+
+	def center(self):
+		return (
+			int(self.left() + self.dist_x() / 2),
+			int(self.top() + self.dist_y() / 2),
+		)
 
 	def intersect(self, other, max_gutter):
 		max_gutter = max(max_gutter, 10)  # hardcoded 10 pixels, find better
@@ -123,7 +131,7 @@ class Segment:
 
 	@staticmethod
 	def along_polygon(polygon, i, j):
-		debug = i == 7 and j == 39
+		debug = False
 		dot1 = polygon[i][0]
 		dot2 = polygon[j][0]
 

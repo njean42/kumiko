@@ -194,13 +194,15 @@ class Debug:
 				cv.drawContours(Debug.img, [hull], 0, Debug.colours['yellow'], Debug.contourSize)
 
 	@staticmethod
-	def draw_line(dot1, dot2, colour):
+	def draw_line(dot1, dot2, colour, size=None):
 		if not Debug.debug:
 			return
 		if Debug.contourSize is None:
 			raise Exception("Fatal error, Debug.contourSize has not been defined")
 
-		cv.line(Debug.img, (dot1[0], dot1[1]), (dot2[0], dot2[1]), colour, Debug.contourSize, cv.LINE_AA)
+		if size is None:
+			size = Debug.contourSize
+		cv.line(Debug.img, (dot1[0], dot1[1]), (dot2[0], dot2[1]), colour, size, cv.LINE_AA)
 
 	@staticmethod
 	def draw_dot(x, y, colour):

@@ -1,4 +1,5 @@
 import math
+import time
 import cv2 as cv
 import numpy as np
 
@@ -12,7 +13,7 @@ class Panel:
 	def from_xyrb(page, x, y, r, b):
 		return Panel(page, xywh = [x, y, r - x, b - y])
 
-	def __init__(self, page, xywh = None, polygon = None):
+	def __init__(self, page, xywh = None, polygon = None, splittable=True):
 		self.page = page
 
 		if xywh is None and polygon is None:
@@ -27,6 +28,8 @@ class Panel:
 		self.b = self.y + xywh[3]  # panel's bottom edge
 
 		self.polygon = polygon
+		self.splittable = splittable
+		self.segments = None
 		self.coverage = None
 
 	def w(self):
@@ -268,32 +271,53 @@ class Panel:
 		other = Panel.from_xyrb(None, *segment.to_xyrb())
 		return self.overlaps(other)
 
+	def get_segments(self):
+		if self.segments is not None:
+			return self.segments
+
+		self.segments = list(filter(lambda s: self.contains_segment(s), self.page.segments))
+
+		return self.segments
+
 	def split(self):
+		if self.splittable is False:
+			return None
+
+		split = self._cached_split()
+
+		if split is None:
+			self.splittable = False
+
+		return split
+
+	def _cached_split(self):
 		if self.polygon is None:
 			return None
 
-		if self.is_small():
+		if self.is_small(extra_ratio = 2):  # panel should be splittable in two non-small subpanels
 			return None
 
-		max_dist_nearby_dots_x = int(self.w() / 3)
-		max_dist_nearby_dots_y = int(self.h() / 3)
-		max_diagonal = math.sqrt(max_dist_nearby_dots_x**2 + max_dist_nearby_dots_y**2)
+		t1 = time.time_ns()
+
+		max_dist_x = int(self.w() / 3)
+		max_dist_y = int(self.h() / 3)
+		max_diagonal = math.sqrt(max_dist_x**2 + max_dist_y**2)
 		dots_along_lines_dist = max_diagonal / 5
 
 		# add dots along straight edges, so that a dot can be "nearby an edge"
 		polygon = np.ndarray(shape = (0, 1, 2), dtype = int, order = 'F')
 		for i in range(len(self.polygon)):
-			j = i + 1
+			j = (i + 1)  % len(self.polygon)
 			dot1 = self.polygon[i][0]
-			dot2 = self.polygon[j % len(self.polygon)][0]
+			dot2 = self.polygon[j][0]
 
 			polygon = np.append(polygon, [[dot1]], axis = 0)
 			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['gray'])
 
 			seg = Segment(dot1, dot2)
 			while (seg.dist() > dots_along_lines_dist):
-				alpha_x = math.acos((seg.dist_x()) / seg.dist())
-				alpha_y = math.asin((seg.dist_y()) / seg.dist())
+				alpha_x = math.acos((seg.dist_x(keep_sign=True)) / seg.dist())
+				alpha_y = math.asin((seg.dist_y(keep_sign=True)) / seg.dist())
 				dist_x = int(math.cos(alpha_x) * dots_along_lines_dist)
 				dist_y = int(math.sin(alpha_y) * dots_along_lines_dist)
 
@@ -304,23 +328,35 @@ class Panel:
 
 				seg = Segment(dot1, dot2)
 
+		print(f"\tComposed polygon {self} ({len(polygon)} dots) — {(time.time_ns() - t1)/10**6:.0f}ms")
+		t1 = time.time_ns()
+
 		# Find dots nearby one another
 		nearby_dots = []
-		min_dots_between_nearby_dots = round(len(polygon) / 4)
+		min_hops = round(len(polygon) / 4)
 
-		for i in range(len(polygon) - min_dots_between_nearby_dots):
-			for j in range(i + min_dots_between_nearby_dots, len(polygon)):
+		for i in range(len(polygon) - min_hops):
+			for j in range(i + min_hops, len(polygon)):
 				dot1 = polygon[i][0]
 				dot2 = polygon[j][0]
 				seg = Segment(dot1, dot2)
 
-				if abs(seg.dist_x()) <= max_dist_nearby_dots_x and abs(seg.dist_y()) <= max_dist_nearby_dots_y:
+				if seg.dist_x() <= max_dist_x and seg.dist_y() <= max_dist_y:
 					nearby_dots.append([i, j])
-					Debug.draw_dot(dot1[0], dot1[1], Debug.colours['lightpurple'])
-					Debug.draw_dot(dot2[0], dot2[1], Debug.colours['lightpurple'])
 
 		if len(nearby_dots) == 0:
 			return None
+
+		print(f"\tFound {len(nearby_dots)} nearby dots (nb_hops >= {min_hops}) — {(time.time_ns() - t1)/10**6:.0f}ms")
+
+		for dots in nearby_dots:
+			dot1 = polygon[dots[0]][0]
+			dot2 = polygon[dots[1]][0]
+			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['lightpurple'])
+			Debug.draw_dot(dot2[0], dot2[1], Debug.colours['lightpurple'])
+			Debug.draw_line(dot1, dot2, Debug.colours['lightpurple'], size=1)
+
+		t1 = time.time_ns()
 
 		splits = []
 		for dots in nearby_dots:
@@ -363,6 +399,9 @@ class Panel:
 			split_segment = Segment.along_polygon(polygon, dots[0], dots[1])
 			splits.append(Split(self, panel1, panel2, split_segment))
 
+		print(f"\tFound {len(splits)} splits — {(time.time_ns() - t1)/10**6:.0f}ms")
+		t1 = time.time_ns()
+
 		# weak_splits = list(filter(lambda split: split.segments_coverage() <= 50/100, splits))
 		# for split in weak_splits:
 		# 	if split.segment.dist() > 10: # and split.segments_coverage() > 1/100:
@@ -372,10 +411,13 @@ class Panel:
 
 		splits = list(filter(lambda split: split.segments_coverage() > 50 / 100, splits))
 
+		print(f"\tGot coverage for splits, {len(splits)} remaining — {(time.time_ns() - t1)/10**6:.0f}ms")
+		t1 = time.time_ns()
+
 		if len(splits) == 0:
 			return None
 
-		# return the split that best matches lines (panel edges)
+		# return the split that best matches segments (~panel edges)
 		best_split = max(splits, key = lambda split: split.covered_dist)
 
 		return best_split
@@ -388,7 +430,7 @@ class Split:
 		self.subpanels = [subpanel1, subpanel2]
 		self.segment = split_segment
 
-		matching_segments = self.segment.intersect_all(self.panel.page.segments, self.panel.page.max_gutter())
+		matching_segments = self.segment.intersect_all(self.panel.get_segments(), self.panel.page.max_gutter())
 		self.covered_dist = sum(map(lambda s: s.dist(), matching_segments))
 
 	def segments_coverage(self):
