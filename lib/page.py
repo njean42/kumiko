@@ -17,7 +17,7 @@ class NotAnImageException(Exception):
 
 class Page:
 
-	DEFAULT_MIN_PANEL_SIZE_RATIO = 1 / 15
+	DEFAULT_MIN_PANEL_SIZE_RATIO = 1 / 10
 
 	def get_infos(self):
 		actual_gutters = self.actual_gutters()
@@ -215,7 +215,7 @@ class Page:
 
 		for small_panels in grouped.values():
 			big_hull = cv.convexHull(np.concatenate(list(map(lambda p: p.polygon, small_panels))))
-			big_panel = Panel(page = self, polygon = big_hull)
+			big_panel = Panel(page = self, polygon = big_hull, splittable=False)
 
 			self.panels.append(big_panel)
 			for p in small_panels:
@@ -244,7 +244,7 @@ class Page:
 
 					Debug.draw_line(split.segment.a, split.segment.b, Debug.colours['red'])
 					print(
-						f"split segment has covered {split.segments_coverage()} {int(split.covered_dist)} / length {int(split.segment.dist())} {split.segment}"
+						f"split segment has covered {split.segments_coverage():.0%} {int(split.covered_dist)} / length {int(split.segment.dist())} {split.segment}"
 					)
 					break
 
