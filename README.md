@@ -72,6 +72,19 @@ Here is an example of how *Kumiko* is going to number panels by default (numbers
 > [Pepper & Carott](https://www.peppercarrot.com/) by [David Revoy](https://www.davidrevoy.com), [episode 2](https://www.peppercarrot.com/en/article237/episode-2-rainbow-potions), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 
 
+# Contributing
+
+Feature requests and PR are welcome!
+
+*Kumiko* python code if formatted with [yapf](https://github.com/google/yapf).
+Config file is committed [here](.style.yapf).
+
+To format all your code, simply run:
+```bash
+yapf3 --recursive --in-place .
+```
+
+
 # Short- and longer-term features (roadmap)
 
 ## Kumiko library
