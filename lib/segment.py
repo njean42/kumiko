@@ -5,11 +5,17 @@ import numpy as np
 class Segment:
 
 	def __init__(self, a, b):
-		self.a = a
-		self.b = b
+		self.a = tuple(a)
+		self.b = tuple(b)
 
 	def __str__(self):
 		return f"({self.a}, {self.b})"
+
+	def __eq__(self, other):
+		return any([
+			self.a == other.a and self.b == other.b,
+			self.a == other.b and self.b == other.a,
+		])
 
 	def dist(self):
 		return math.sqrt(self.dist_x()**2 + self.dist_y()**2)
@@ -43,8 +49,8 @@ class Segment:
 			int(self.top() + self.dist_y() / 2),
 		)
 
-	def intersect(self, other, max_gutter):
-		max_gutter = max(max_gutter, 10)  # hardcoded 10 pixels, find better
+	def intersect(self, other):
+		gutter = max(self.dist(), other.dist()) * 5 / 100
 		dbg = False
 
 		# angle too big ?
@@ -57,10 +63,10 @@ class Segment:
 		# segments are apart ?
 		if any(
 			[
-				self.right() < other.left() - max_gutter,  # self left from other
-				self.left() > other.right() + max_gutter,  # self right from other
-				self.bottom() < other.top() - max_gutter,  # self above other
-				self.top() > other.bottom() + max_gutter,  # self below other
+				self.right() < other.left() - gutter,  # self left from other
+				self.left() > other.right() + gutter,  # self right from other
+				self.bottom() < other.top() - gutter,  # self above other
+				self.top() > other.bottom() + gutter,  # self below other
 			]
 		):
 			if dbg: print(f"segments apart")
@@ -84,8 +90,8 @@ class Segment:
 		dist_d_to_ab = Segment(other.b, projected_d).dist()
 
 		# segments are a bit too far from each other
-		if (dist_c_to_ab + dist_d_to_ab) / 2 > max_gutter:
-			if dbg: print(f"segments too far − max({dist_c_to_ab},{dist_d_to_ab})")
+		if (dist_c_to_ab + dist_d_to_ab) / 2 > gutter:
+			if dbg: print(f"segments too far − max({dist_c_to_ab},{dist_d_to_ab}) − gutter {gutter} − segments dists = {self.dist()} ; {other.dist()}")
 			return None
 
 		# segments overlap, or one contains the other
@@ -100,8 +106,8 @@ class Segment:
 
 		return Segment(b, c)
 
-	def union(self, other, max_gutter):
-		intersect = self.intersect(other, max_gutter)
+	def union(self, other):
+		intersect = self.intersect(other)
 		if intersect is None:
 			return None
 
@@ -120,21 +126,20 @@ class Segment:
 	def angle(self):
 		return math.atan(self.dist_y() / self.dist_x()) if self.dist_x() != 0 else math.pi / 2
 
-	def intersect_all(self, segments, max_gutter):
+	def intersect_all(self, segments):
 		segments_match = []
 		for segment in segments:
-			s3 = self.intersect(segment, max_gutter)
+			s3 = self.intersect(segment)
 			if s3 is not None:
 				segments_match.append(s3)
 
-		return Segment.union_all(segments_match, max_gutter)
+		return Segment.union_all(segments_match)
 
 	@staticmethod
 	def along_polygon(polygon, i, j):
 		debug = False
 		dot1 = polygon[i][0]
 		dot2 = polygon[j][0]
-
 		split_segment = Segment(dot1, dot2)
 
 		if debug: print(f"original split segment: {split_segment}")
@@ -166,26 +171,26 @@ class Segment:
 		return split_segment
 
 	@staticmethod
-	def union_all(segments, max_gutter):
+	def union_all(segments):
 		unioned_segments = True
 		while unioned_segments:
 			unioned_segments = False
 			dedup_segments = []
-			used = {}
+			used = []
 			for i, s1 in enumerate(segments):
 				for s2 in segments[i + 1:]:
-					if used.get(s2):
+					if s2 in used:
 						continue
 
-					s3 = s1.union(s2, max_gutter)
+					s3 = s1.union(s2)
 					if s3 is not None:
 						unioned_segments = True
 						dedup_segments += [s3]
-						used[s1] = True
-						used[s2] = True
+						used.append(s1)
+						used.append(s2)
 						break
 
-				if not used.get(s1):
+				if s1 not in used:
 					dedup_segments += [s1]
 
 			segments = dedup_segments

@@ -303,18 +303,24 @@ class Panel:
 		max_dist_y = int(self.h() / 3)
 		max_diagonal = math.sqrt(max_dist_x**2 + max_dist_y**2)
 		dots_along_lines_dist = max_diagonal / 5
+		min_dist_between_dots_x = max_dist_x / 20
+		min_dist_between_dots_y = max_dist_y / 20
 
 		# add dots along straight edges, so that a dot can be "nearby an edge"
+		original_polygon = np.copy(self.polygon)
 		polygon = np.ndarray(shape = (0, 1, 2), dtype = int, order = 'F')
-		for i in range(len(self.polygon)):
-			j = (i + 1)  % len(self.polygon)
-			dot1 = self.polygon[i][0]
-			dot2 = self.polygon[j][0]
+		for i in range(len(original_polygon)):
+			j = (i + 1)  % len(original_polygon)
+			dot1 = original_polygon[i][0]
+			dot2 = original_polygon[j][0]
+			seg = Segment(dot1, dot2)
+
+			if seg.dist_x() < min_dist_between_dots_x and seg.dist_y() < min_dist_between_dots_y:
+				original_polygon[j][0] = seg.center()
+				continue
 
 			polygon = np.append(polygon, [[dot1]], axis = 0)
-			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['gray'])
 
-			seg = Segment(dot1, dot2)
 			while (seg.dist() > dots_along_lines_dist):
 				alpha_x = math.acos((seg.dist_x(keep_sign=True)) / seg.dist())
 				alpha_y = math.asin((seg.dist_y(keep_sign=True)) / seg.dist())
@@ -324,11 +330,19 @@ class Panel:
 				dot1 = [dot1[0] + dist_x, dot1[1] + dist_y]
 
 				polygon = np.append(polygon, [[dot1]], axis = 0)
-				Debug.draw_dot(dot1[0], dot1[1], Debug.colours['gray'])
 
 				seg = Segment(dot1, dot2)
 
 		print(f"\tComposed polygon {self} ({len(polygon)} dots) — {(time.time_ns() - t1)/10**6:.0f}ms")
+
+		for i in range(len(polygon)):
+			j = (i + 1)  % len(polygon)
+			dot1 = polygon[i][0]
+			dot2 = polygon[j][0]
+			Debug.draw_line(dot1, dot2, Debug.colours['red'], size=2)
+			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['gray'])
+		Debug.add_image(f"Composed polygon ({len(polygon)} dots)")
+
 		t1 = time.time_ns()
 
 		# Find dots nearby one another
@@ -355,6 +369,7 @@ class Panel:
 			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['lightpurple'])
 			Debug.draw_dot(dot2[0], dot2[1], Debug.colours['lightpurple'])
 			Debug.draw_line(dot1, dot2, Debug.colours['lightpurple'], size=1)
+		Debug.add_image(f"Nearby dots ({len(nearby_dots)})")
 
 		t1 = time.time_ns()
 
@@ -397,9 +412,19 @@ class Panel:
 				continue
 
 			split_segment = Segment.along_polygon(polygon, dots[0], dots[1])
-			splits.append(Split(self, panel1, panel2, split_segment))
+			split = Split(self, panel1, panel2, split_segment)
+			if split not in splits:
+				splits.append(split)
 
 		print(f"\tFound {len(splits)} splits — {(time.time_ns() - t1)/10**6:.0f}ms")
+
+		for split in splits:
+			Debug.draw_line(split.segment.a, split.segment.b, Debug.colours['red'], size=2)
+			print(f"\t\tSplit found, dist = {split.segment.dist()} − {split.segment}")
+			for s in split.matching_segments:
+				print(f"\t\t\tMatching segment {s}")
+		Debug.add_image(f"Splits ({len(splits)})")
+
 		t1 = time.time_ns()
 
 		# weak_splits = list(filter(lambda split: split.segments_coverage() <= 50/100, splits))
@@ -430,8 +455,11 @@ class Split:
 		self.subpanels = [subpanel1, subpanel2]
 		self.segment = split_segment
 
-		matching_segments = self.segment.intersect_all(self.panel.get_segments(), self.panel.page.max_gutter())
-		self.covered_dist = sum(map(lambda s: s.dist(), matching_segments))
+		self.matching_segments = self.segment.intersect_all(self.panel.get_segments())
+		self.covered_dist = sum(map(lambda s: s.dist(), self.matching_segments))
+
+	def __eq__(self, other):
+		return self.segment == other.segment
 
 	def segments_coverage(self):
 		segment_dist = self.segment.dist()

@@ -153,7 +153,7 @@ class Page:
 			min_dist *= 1.1
 
 		print(f"Page segments before: {len(self.segments)}")
-		self.segments = Segment.union_all(self.segments, self.max_gutter())
+		self.segments = Segment.union_all(self.segments)
 		print(f"Page segments after: {len(self.segments)}")
 
 		for s in self.segments:
@@ -382,10 +382,11 @@ class Page:
 						continue
 
 					# are there big segments in this panel?
-					segments = set()
+					segments = []
 					for s in self.segments:
 						if p3.contains_segment(s) and s.dist() > p3.diagonal().dist() / 5:
-							segments.add(s)
+							if s not in segments:
+								segments.append(s)
 
 					# print(f"found {len(segments)} segments in panel {p3}, with sizes {list(map(lambda s: int(s.dist()), segments))}")
 
