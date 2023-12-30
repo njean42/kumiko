@@ -194,7 +194,7 @@ class Debug:
 				cv.drawContours(Debug.img, [hull], 0, Debug.colours['yellow'], Debug.contourSize)
 
 	@staticmethod
-	def draw_line(dot1, dot2, colour, size=None):
+	def draw_line(dot1, dot2, colour, size = None):
 		if not Debug.debug:
 			return
 		if Debug.contourSize is None:

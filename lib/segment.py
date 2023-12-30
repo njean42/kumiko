@@ -5,8 +5,14 @@ import numpy as np
 class Segment:
 
 	def __init__(self, a, b):
-		self.a = tuple(a)
-		self.b = tuple(b)
+		self.a = (int(a[0]), int(a[1]))
+		self.b = (int(b[0]), int(b[1]))
+
+		for dot in [self.a, self.b]:
+			if len(dot) != 2:
+				raise Exception(f"Creating a segment with more or less than two dots: Segment({a}, {b})")
+			if type(dot[0]) != int or type(dot[1]) != int:
+				raise Exception(f"Creating a segment with non-dots: Segment({a}, {b})")
 
 	def __str__(self):
 		return f"({self.a}, {self.b})"
@@ -20,11 +26,11 @@ class Segment:
 	def dist(self):
 		return math.sqrt(self.dist_x()**2 + self.dist_y()**2)
 
-	def dist_x(self, keep_sign=False):
+	def dist_x(self, keep_sign = False):
 		dist = self.b[0] - self.a[0]
 		return dist if keep_sign else abs(dist)
 
-	def dist_y(self, keep_sign=False):
+	def dist_y(self, keep_sign = False):
 		dist = self.b[1] - self.a[1]
 		return dist if keep_sign else abs(dist)
 
@@ -48,6 +54,14 @@ class Segment:
 			int(self.left() + self.dist_x() / 2),
 			int(self.top() + self.dist_y() / 2),
 		)
+
+	def may_contain(self, dot):
+		return all([
+			dot[0] >= self.left(),
+			dot[0] <= self.right(),
+			dot[1] >= self.top(),
+			dot[1] <= self.bottom(),
+		])
 
 	def intersect(self, other):
 		gutter = max(self.dist(), other.dist()) * 5 / 100
@@ -91,7 +105,10 @@ class Segment:
 
 		# segments are a bit too far from each other
 		if (dist_c_to_ab + dist_d_to_ab) / 2 > gutter:
-			if dbg: print(f"segments too far − max({dist_c_to_ab},{dist_d_to_ab}) − gutter {gutter} − segments dists = {self.dist()} ; {other.dist()}")
+			if dbg:
+				print(
+					f"segments too far − max({dist_c_to_ab},{dist_d_to_ab}) − gutter {gutter} − segments dists = {self.dist()} ; {other.dist()}"
+				)
 			return None
 
 		# segments overlap, or one contains the other
@@ -204,4 +221,4 @@ class Segment:
 		ap = p - a
 		ab = b - a
 		result = a + np.dot(ap, ab) / np.dot(ab, ab) * ab
-		return result
+		return (round(result[0]), round(result[1]))

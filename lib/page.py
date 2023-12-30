@@ -215,7 +215,7 @@ class Page:
 
 		for small_panels in grouped.values():
 			big_hull = cv.convexHull(np.concatenate(list(map(lambda p: p.polygon, small_panels))))
-			big_panel = Panel(page = self, polygon = big_hull, splittable=False)
+			big_panel = Panel(page = self, polygon = big_hull, splittable = False)
 
 			self.panels.append(big_panel)
 			for p in small_panels:

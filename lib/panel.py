@@ -13,7 +13,7 @@ class Panel:
 	def from_xyrb(page, x, y, r, b):
 		return Panel(page, xywh = [x, y, r - x, b - y])
 
-	def __init__(self, page, xywh = None, polygon = None, splittable=True):
+	def __init__(self, page, xywh = None, polygon = None, splittable = True):
 		self.page = page
 
 		if xywh is None and polygon is None:
@@ -157,30 +157,30 @@ class Panel:
 		return o_panel.area() / other.area() > 0.50
 
 	def same_row(self, other):
-		above, below = sorted([self, other], key=lambda p: p.y)
+		above, below = sorted([self, other], key = lambda p: p.y)
 
 		if below.y > above.b:  # stricly above
 			return False
 
-		if below.b < above.b: # contained
+		if below.b < above.b:  # contained
 			return True
 
 		# intersect
 		intersection_y = min(above.b, below.b) - below.y
-		return intersection_y / min(above.h(), below.h()) >= 1/3
+		return intersection_y / min(above.h(), below.h()) >= 1 / 3
 
 	def same_col(self, other):
-		left, right = sorted([self, other], key=lambda p: p.x)
+		left, right = sorted([self, other], key = lambda p: p.x)
 
 		if right.x > left.r:  # stricly left
 			return False
 
-		if right.r < left.r: # contained
+		if right.r < left.r:  # contained
 			return True
 
 		# intersect
 		intersection_x = min(left.r, right.r) - right.x
-		return intersection_x / min(left.w(), right.w()) >= 1/3
+		return intersection_x / min(left.w(), right.w()) >= 1 / 3
 
 	def find_top_panel(self):
 		all_top = list(filter(lambda p: p.b <= self.y and p.same_col(self), self.page.panels))
@@ -299,55 +299,117 @@ class Panel:
 
 		t1 = time.time_ns()
 
+		min_hops = 3
 		max_dist_x = int(self.w() / 3)
 		max_dist_y = int(self.h() / 3)
 		max_diagonal = math.sqrt(max_dist_x**2 + max_dist_y**2)
 		dots_along_lines_dist = max_diagonal / 5
-		min_dist_between_dots_x = max_dist_x / 20
-		min_dist_between_dots_y = max_dist_y / 20
+		min_dist_between_dots_x = max_dist_x / 10
+		min_dist_between_dots_y = max_dist_y / 10
 
-		# add dots along straight edges, so that a dot can be "nearby an edge"
+		# Compose modified polygon to optimise splits
 		original_polygon = np.copy(self.polygon)
 		polygon = np.ndarray(shape = (0, 1, 2), dtype = int, order = 'F')
+		intermediary_dots = []
+		extra_dots = []
+
 		for i in range(len(original_polygon)):
-			j = (i + 1)  % len(original_polygon)
-			dot1 = original_polygon[i][0]
-			dot2 = original_polygon[j][0]
+			j = (i + 1) % len(original_polygon)
+			dot1 = tuple(original_polygon[i][0])
+			dot2 = tuple(original_polygon[j][0])
 			seg = Segment(dot1, dot2)
 
+			# merge nearby dots together
 			if seg.dist_x() < min_dist_between_dots_x and seg.dist_y() < min_dist_between_dots_y:
 				original_polygon[j][0] = seg.center()
 				continue
 
 			polygon = np.append(polygon, [[dot1]], axis = 0)
 
-			while (seg.dist() > dots_along_lines_dist):
-				alpha_x = math.acos((seg.dist_x(keep_sign=True)) / seg.dist())
-				alpha_y = math.asin((seg.dist_y(keep_sign=True)) / seg.dist())
-				dist_x = int(math.cos(alpha_x) * dots_along_lines_dist)
-				dist_y = int(math.sin(alpha_y) * dots_along_lines_dist)
+			# Add dots on *long* edges, by projecting other polygon dots on this segment
+			add_dots = []
 
-				dot1 = [dot1[0] + dist_x, dot1[1] + dist_y]
+			# should be splittable in [dot1, dot1b(?), projected_dot3, dot2b(?), dot2]
+			if seg.dist() < dots_along_lines_dist * 2:
+				continue
 
-				polygon = np.append(polygon, [[dot1]], axis = 0)
+			for k, dot3 in enumerate(original_polygon):
+				if abs(k - i) < min_hops:
+					continue
 
-				seg = Segment(dot1, dot2)
+				projected_dot3 = seg.projected_point(dot3)
 
-		print(f"\tComposed polygon {self} ({len(polygon)} dots) — {(time.time_ns() - t1)/10**6:.0f}ms")
+				# Segment should be able to contain projected_dot3
+				if not seg.may_contain(projected_dot3):
+					continue
+
+				# dot3 should be close to current segment − distance(dot3, projected_dot3) should be short
+				project = Segment(dot3[0], projected_dot3)
+				if project.dist_x() > max_dist_x or project.dist_y() > max_dist_y:
+					continue
+
+				# append dot3 as intermediary dot on segment(dot1, dot2)
+				add_dots.append(projected_dot3)
+				intermediary_dots.append(projected_dot3)
+
+			# Add also a dot near each end of the segment (provoke segment matching)
+			alpha_x = math.acos(seg.dist_x(keep_sign = True) / seg.dist())
+			alpha_y = math.asin(seg.dist_y(keep_sign = True) / seg.dist())
+			dist_x = int(math.cos(alpha_x) * dots_along_lines_dist)
+			dist_y = int(math.sin(alpha_y) * dots_along_lines_dist)
+
+			dot1b = (dot1[0] + dist_x, dot1[1] + dist_y)
+			# if len(intermediary_dots) == 0 or Segment(dot1b, intermediary_dots[0]).dist() > dots_along_lines_dist:
+			add_dots.append(dot1b)
+			extra_dots.append(dot1b)
+
+			dot2b = (dot2[0] - dist_x, dot2[1] - dist_y)
+			# if len(intermediary_dots) == 0 or Segment(dot2b, intermediary_dots[-1]).dist() > dots_along_lines_dist:
+			add_dots.append(dot2b)
+			extra_dots.append(dot2b)
+
+			for dot in sorted(add_dots, key = lambda dot: Segment(dot1, dot).dist()):
+				polygon = np.append(polygon, [[dot]], axis = 0)
+
+		# Re-merge nearby dots together
+		original_polygon = np.copy(polygon)
+		polygon = np.ndarray(shape = (0, 1, 2), dtype = int, order = 'F')
+
+		for i in range(len(original_polygon)):
+			j = (i + 1) % len(original_polygon)
+			dot1 = tuple(original_polygon[i][0])
+			dot2 = tuple(original_polygon[j][0])
+			seg = Segment(dot1, dot2)
+
+			# merge nearby dots together
+			if seg.dist_x() < min_dist_between_dots_x and seg.dist_y() < min_dist_between_dots_y:
+				intermediary_dots = [dot for dot in intermediary_dots if dot not in [dot1, dot2]]
+				extra_dots = [dot for dot in extra_dots if dot not in [dot1, dot2]]
+				original_polygon[j][0] = seg.center()
+				continue
+
+			polygon = np.append(polygon, [[dot1]], axis = 0)
+
+		print(
+			f"\tComposed polygon {self} ({len(polygon)} dots, min_dist_between_dots = {int(min_dist_between_dots_x)} ; {int(min_dist_between_dots_y)}) — {(time.time_ns() - t1)/10**6:.0f}ms"
+		)
 
 		for i in range(len(polygon)):
-			j = (i + 1)  % len(polygon)
+			j = (i + 1) % len(polygon)
 			dot1 = polygon[i][0]
 			dot2 = polygon[j][0]
-			Debug.draw_line(dot1, dot2, Debug.colours['red'], size=2)
+			Debug.draw_line(dot1, dot2, Debug.colours['red'], size = 2)
 			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['gray'])
-		Debug.add_image(f"Composed polygon ({len(polygon)} dots)")
+		for dot in intermediary_dots:
+			Debug.draw_dot(dot[0], dot[1], Debug.colours['red'])
+		for dot in extra_dots:
+			Debug.draw_dot(dot[0], dot[1], Debug.colours['yellow'])
+		Debug.add_image(f"Composed polygon {self} ({len(polygon)} dots, {len(intermediary_dots)} intermediary)")
 
 		t1 = time.time_ns()
 
 		# Find dots nearby one another
 		nearby_dots = []
-		min_hops = round(len(polygon) / 4)
 
 		for i in range(len(polygon) - min_hops):
 			for j in range(i + min_hops, len(polygon)):
@@ -368,7 +430,7 @@ class Panel:
 			dot2 = polygon[dots[1]][0]
 			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['lightpurple'])
 			Debug.draw_dot(dot2[0], dot2[1], Debug.colours['lightpurple'])
-			Debug.draw_line(dot1, dot2, Debug.colours['lightpurple'], size=1)
+			Debug.draw_line(dot1, dot2, Debug.colours['lightpurple'], size = 1)
 		Debug.add_image(f"Nearby dots ({len(nearby_dots)})")
 
 		t1 = time.time_ns()
@@ -419,7 +481,7 @@ class Panel:
 		print(f"\tFound {len(splits)} splits — {(time.time_ns() - t1)/10**6:.0f}ms")
 
 		for split in splits:
-			Debug.draw_line(split.segment.a, split.segment.b, Debug.colours['red'], size=2)
+			Debug.draw_line(split.segment.a, split.segment.b, Debug.colours['red'], size = 2)
 			print(f"\t\tSplit found, dist = {split.segment.dist()} − {split.segment}")
 			for s in split.matching_segments:
 				print(f"\t\t\tMatching segment {s}")
