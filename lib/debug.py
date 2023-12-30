@@ -42,11 +42,7 @@ class Debug:
 		if not Debug.debug:
 			return
 
-		Debug.prev_time = Debug.time
-		Debug.time = time.time_ns()
-
-		elapsed = Debug.time - Debug.prev_time
-		print(f"{name} ({len(infos['panels'])} panels) -- time elapsed: {elapsed/pow(10,9):.2f} seconds")
+		elapsed = Debug.show_time(f"{name} ({len(infos['panels'])} panels)")
 
 		Debug.steps.append({
 			'name': name,
@@ -63,7 +59,9 @@ class Debug:
 		Debug.time = time.time_ns()
 
 		elapsed = Debug.time - Debug.prev_time
-		print(f"{name} -- time elapsed: {elapsed/pow(10,9):.2f} seconds")
+		print(f"{name} − {elapsed/pow(10,6):.0f}ms")
+
+		return elapsed
 
 	imgID = 0
 

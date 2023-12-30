@@ -65,11 +65,9 @@ class Segment:
 
 	def intersect(self, other):
 		gutter = max(self.dist(), other.dist()) * 5 / 100
-		dbg = False
 
 		# angle too big ?
 		if not self.angle_ok_with(other):
-			if dbg: print(f"angle too big {self.angle_with(other)}")
 			return None
 
 		# from here, segments are almost parallel
@@ -83,19 +81,7 @@ class Segment:
 				self.top() > other.bottom() + gutter,  # self below other
 			]
 		):
-			if dbg: print(f"segments apart")
 			return None
-
-		# segments overlap
-		# self.sort(key=lambda d1: d1[0])
-		# other.sort(key=lambda d1: d1[0])
-
-		# left_segment, right_segment = sorted([self,other], key=lambda s: sum(s[0]))
-		# del self, other
-
-		# distance between segments
-		# a, b = left_segment
-		# c, d = right_segment
 
 		projected_c = self.projected_point(other.a)
 		dist_c_to_ab = Segment(other.a, projected_c).dist()
@@ -105,10 +91,6 @@ class Segment:
 
 		# segments are a bit too far from each other
 		if (dist_c_to_ab + dist_d_to_ab) / 2 > gutter:
-			if dbg:
-				print(
-					f"segments too far − max({dist_c_to_ab},{dist_d_to_ab}) − gutter {gutter} − segments dists = {self.dist()} ; {other.dist()}"
-				)
 			return None
 
 		# segments overlap, or one contains the other
@@ -154,22 +136,15 @@ class Segment:
 
 	@staticmethod
 	def along_polygon(polygon, i, j):
-		debug = False
 		dot1 = polygon[i][0]
 		dot2 = polygon[j][0]
 		split_segment = Segment(dot1, dot2)
-
-		if debug: print(f"original split segment: {split_segment}")
 
 		while True:
 			i = (i - 1) % len(polygon)
 			add_segment = Segment(polygon[i][0], polygon[(i + 1) % len(polygon)][0])
 			if add_segment.angle_ok_with(split_segment):
 				split_segment = Segment(add_segment.a, split_segment.b)
-				if debug:
-					print(
-						f"[i] add segment! {add_segment} (angle {add_segment.angle_with(split_segment)}) => {split_segment}"
-					)
 			else:
 				break
 
@@ -177,10 +152,6 @@ class Segment:
 			j = (j + 1) % len(polygon)
 			add_segment = Segment(polygon[(j - 1) % len(polygon)][0], polygon[j][0])
 			if add_segment.angle_ok_with(split_segment):
-				if debug:
-					print(
-						f"[j] add segment! {add_segment} (angle {add_segment.angle_with(split_segment)}) => {split_segment}"
-					)
 				split_segment = Segment(split_segment.a, add_segment.b)
 			else:
 				break

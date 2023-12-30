@@ -1,5 +1,4 @@
 import math
-import time
 import cv2 as cv
 import numpy as np
 
@@ -143,10 +142,6 @@ class Panel:
 			return True
 
 		return opanel.area() / smallest_panel_area > area_ratio
-
-		# print(f"{opanel.area()} ({opanel}) / {min(self.area(), other.area())} (min({self},{other})) = {opanel.area() / min(self.area(), other.area())} >? {area_ratio} => {result}")
-
-		return result
 
 	def contains(self, other):
 		o_panel = self.overlap_panel(other)
@@ -297,8 +292,6 @@ class Panel:
 		if self.is_small(extra_ratio = 2):  # panel should be splittable in two non-small subpanels
 			return None
 
-		t1 = time.time_ns()
-
 		min_hops = 3
 		max_dist_x = int(self.w() / 3)
 		max_dist_y = int(self.h() / 3)
@@ -390,10 +383,6 @@ class Panel:
 
 			polygon = np.append(polygon, [[dot1]], axis = 0)
 
-		print(
-			f"\tComposed polygon {self} ({len(polygon)} dots, min_dist_between_dots = {int(min_dist_between_dots_x)} ; {int(min_dist_between_dots_y)}) — {(time.time_ns() - t1)/10**6:.0f}ms"
-		)
-
 		for i in range(len(polygon)):
 			j = (i + 1) % len(polygon)
 			dot1 = polygon[i][0]
@@ -405,8 +394,6 @@ class Panel:
 		for dot in extra_dots:
 			Debug.draw_dot(dot[0], dot[1], Debug.colours['yellow'])
 		Debug.add_image(f"Composed polygon {self} ({len(polygon)} dots, {len(intermediary_dots)} intermediary)")
-
-		t1 = time.time_ns()
 
 		# Find dots nearby one another
 		nearby_dots = []
@@ -423,8 +410,6 @@ class Panel:
 		if len(nearby_dots) == 0:
 			return None
 
-		print(f"\tFound {len(nearby_dots)} nearby dots (nb_hops >= {min_hops}) — {(time.time_ns() - t1)/10**6:.0f}ms")
-
 		for dots in nearby_dots:
 			dot1 = polygon[dots[0]][0]
 			dot2 = polygon[dots[1]][0]
@@ -432,8 +417,6 @@ class Panel:
 			Debug.draw_dot(dot2[0], dot2[1], Debug.colours['lightpurple'])
 			Debug.draw_line(dot1, dot2, Debug.colours['lightpurple'], size = 1)
 		Debug.add_image(f"Nearby dots ({len(nearby_dots)})")
-
-		t1 = time.time_ns()
 
 		splits = []
 		for dots in nearby_dots:
@@ -467,10 +450,6 @@ class Panel:
 				continue
 
 			if panel1.overlaps(panel2):
-				# if dbg:
-				# 	Debug.draw_contours([panel1.polygon, panel2.polygon], Debug.colours['blue'])
-				# 	# Debug.draw_panels([panel1, panel2], Debug.colours['red'])
-				# 	Debug.add_image("{panel1} overlaps {panel2}")
 				continue
 
 			split_segment = Segment.along_polygon(polygon, dots[0], dots[1])
@@ -478,28 +457,11 @@ class Panel:
 			if split not in splits:
 				splits.append(split)
 
-		print(f"\tFound {len(splits)} splits — {(time.time_ns() - t1)/10**6:.0f}ms")
-
 		for split in splits:
 			Debug.draw_line(split.segment.a, split.segment.b, Debug.colours['red'], size = 2)
-			print(f"\t\tSplit found, dist = {split.segment.dist()} − {split.segment}")
-			for s in split.matching_segments:
-				print(f"\t\t\tMatching segment {s}")
 		Debug.add_image(f"Splits ({len(splits)})")
 
-		t1 = time.time_ns()
-
-		# weak_splits = list(filter(lambda split: split.segments_coverage() <= 50/100, splits))
-		# for split in weak_splits:
-		# 	if split.segment.dist() > 10: # and split.segments_coverage() > 1/100:
-		# 		Debug.draw_contours(list(map(lambda n: n.polygon, split.subpanels)), Debug.colours['blue'])
-		# 		Debug.draw_line(split.segment.a, split.segment.b, Debug.colours['red'])
-		# 		Debug.add_image(f"Weak Split {split.segment} {int(split.covered_dist)} / {int(split.segment.dist())} = {split.segments_coverage():.0%}")
-
 		splits = list(filter(lambda split: split.segments_coverage() > 50 / 100, splits))
-
-		print(f"\tGot coverage for splits, {len(splits)} remaining — {(time.time_ns() - t1)/10**6:.0f}ms")
-		t1 = time.time_ns()
 
 		if len(splits) == 0:
 			return None

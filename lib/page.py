@@ -63,7 +63,7 @@ class Page:
 				try:
 					self.license = json.load(fh)
 				except json.decoder.JSONDecodeError:
-					print(f"License file {filename+'.license'} is not a valid JSON file")
+					print(f"License file {filename+'.license'} is not a valid JSON file", file = sys.stderr)
 					sys.exit(1)
 
 		Debug.set_base_img(self.img)
@@ -132,7 +132,6 @@ class Page:
 		min_dist = min(self.img_size) * self.small_panel_ratio
 
 		while self.segments is None or len(self.segments) > 500:
-			# print(f"looking for segments of length >= {int(min_dist)}")
 			self.segments = []
 
 			if dlines is None or dlines[0] is None:
@@ -152,13 +151,10 @@ class Page:
 
 			min_dist *= 1.1
 
-		print(f"Page segments before: {len(self.segments)}")
 		self.segments = Segment.union_all(self.segments)
-		print(f"Page segments after: {len(self.segments)}")
 
 		for s in self.segments:
 			Debug.draw_line(s.a, s.b, Debug.colours['green'])
-
 		Debug.add_image("Segment Detector")
 		Debug.show_time("Compiled segments")
 
@@ -241,11 +237,7 @@ class Page:
 					self.panels += split.subpanels
 
 					Debug.draw_contours(list(map(lambda n: n.polygon, split.subpanels)), Debug.colours['blue'])
-
 					Debug.draw_line(split.segment.a, split.segment.b, Debug.colours['red'])
-					print(
-						f"split segment has covered {split.segments_coverage():.0%} {int(split.covered_dist)} / length {int(split.segment.dist())} {split.segment}"
-					)
 					break
 
 			if did_split:
@@ -387,8 +379,6 @@ class Page:
 						if p3.contains_segment(s) and s.dist() > p3.diagonal().dist() / 5:
 							if s not in segments:
 								segments.append(s)
-
-					# print(f"found {len(segments)} segments in panel {p3}, with sizes {list(map(lambda s: int(s.dist()), segments))}")
 
 					if len(segments) > 0:  # maybe allow a small number of big segments here?
 						continue
