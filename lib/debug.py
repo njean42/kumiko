@@ -26,7 +26,7 @@ class Debug:
 	subpanel_colours = list(colours.values())[3:]
 
 	debug = False
-	contourSize = None
+	contour_size = None
 	steps = []
 	images = {}
 	time = time.time_ns()
@@ -34,6 +34,9 @@ class Debug:
 
 	@staticmethod
 	def set_base_img(img):
+		if not Debug.debug:
+			return
+
 		Debug.base_img = img
 		Debug.img = np.copy(img)
 
@@ -178,53 +181,100 @@ class Debug:
 	def draw_contours(contours, colour = 'auto', with_hull = False):
 		if not Debug.debug:
 			return
-		if Debug.contourSize is None:
-			raise Exception("Fatal error, Debug.contourSize has not been defined")
+
+		if Debug.contour_size is None:
+			raise Exception("Fatal error, Debug.contour_size has not been defined")
 
 		for i in range(len(contours)):
 			if colour == 'auto':
 				colour = Debug.subpanel_colours[i % len(Debug.subpanel_colours)]
 
-			cv.drawContours(Debug.img, [contours[i]], 0, colour, Debug.contourSize)
+			cv.drawContours(Debug.img, [contours[i]], 0, colour, Debug.contour_size)
 
 			if with_hull:
 				hull = cv.convexHull(contours[i])
-				cv.drawContours(Debug.img, [hull], 0, Debug.colours['yellow'], Debug.contourSize)
+				cv.drawContours(Debug.img, [hull], 0, Debug.colours['yellow'], Debug.contour_size)
+
+	@staticmethod
+	def draw_segments(segments, colour, size = None):
+		if not Debug.debug:
+			return
+
+		if size is None:
+			size = Debug.contour_size
+
+		for segment in segments:
+			Debug.draw_line(segment.a, segment.b, colour, size = size)
 
 	@staticmethod
 	def draw_line(dot1, dot2, colour, size = None):
 		if not Debug.debug:
 			return
-		if Debug.contourSize is None:
-			raise Exception("Fatal error, Debug.contourSize has not been defined")
+
+		if Debug.contour_size is None:
+			raise Exception("Fatal error, Debug.contour_size has not been defined")
 
 		if size is None:
-			size = Debug.contourSize
+			size = Debug.contour_size
 		cv.line(Debug.img, (dot1[0], dot1[1]), (dot2[0], dot2[1]), colour, size, cv.LINE_AA)
+
+	@staticmethod
+	def draw_dots(dots, colour):
+		if not Debug.debug:
+			return
+
+		for dot in dots:
+			Debug.draw_dot(dot[0], dot[1], colour)
+
+	@staticmethod
+	def draw_nearby_dots(polygon, nearby_dots):
+		if not Debug.debug:
+			return
+
+		for dots in nearby_dots:
+			dot1 = polygon[dots[0]][0]
+			dot2 = polygon[dots[1]][0]
+			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['lightpurple'])
+			Debug.draw_dot(dot2[0], dot2[1], Debug.colours['lightpurple'])
+			Debug.draw_line(dot1, dot2, Debug.colours['lightpurple'], size = 1)
 
 	@staticmethod
 	def draw_dot(x, y, colour):
 		if not Debug.debug:
 			return
-		if Debug.contourSize is None:
-			raise Exception("Fatal error, Debug.contourSize has not been defined")
 
-		cv.circle(Debug.img, (x, y), Debug.contourSize * 2, colour, -1)
+		if Debug.contour_size is None:
+			raise Exception("Fatal error, Debug.contour_size has not been defined")
+
+		cv.circle(Debug.img, (x, y), Debug.contour_size * 2, colour, -1)
 
 	@staticmethod
 	def draw_panels(panels, colour):
 		if not Debug.debug:
-			return None
+			return
 
-		if Debug.contourSize is None:
-			raise Exception("Fatal error, Debug.contourSize has not been defined")
+		if Debug.contour_size is None:
+			raise Exception("Fatal error, Debug.contour_size has not been defined")
 
 		for p in panels:
-			cv.rectangle(Debug.img, (p.x, p.y), (p.r, p.b), colour, Debug.contourSize)
+			cv.rectangle(Debug.img, (p.x, p.y), (p.r, p.b), colour, Debug.contour_size)
 
 		# + draw inner white border
 		for p in panels:
 			cv.rectangle(
-				Debug.img, (p.x + Debug.contourSize, p.y + Debug.contourSize),
-				(p.r - Debug.contourSize, p.b - Debug.contourSize), Debug.colours['white'], int(Debug.contourSize / 2)
+				Debug.img, (p.x + Debug.contour_size, p.y + Debug.contour_size),
+				(p.r - Debug.contour_size, p.b - Debug.contour_size), Debug.colours['white'],
+				int(Debug.contour_size / 2)
 			)
+
+	@staticmethod
+	def draw_polygon(polygon):
+		if not Debug.debug:
+			return
+
+		for i in range(len(polygon)):
+			j = (i + 1) % len(polygon)
+			dot1 = polygon[i][0]
+			dot2 = polygon[j][0]
+			Debug.draw_line(dot1, dot2, Debug.colours['red'], size = 2)
+			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['gray'])

@@ -383,16 +383,9 @@ class Panel:
 
 			polygon = np.append(polygon, [[dot1]], axis = 0)
 
-		for i in range(len(polygon)):
-			j = (i + 1) % len(polygon)
-			dot1 = polygon[i][0]
-			dot2 = polygon[j][0]
-			Debug.draw_line(dot1, dot2, Debug.colours['red'], size = 2)
-			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['gray'])
-		for dot in intermediary_dots:
-			Debug.draw_dot(dot[0], dot[1], Debug.colours['red'])
-		for dot in extra_dots:
-			Debug.draw_dot(dot[0], dot[1], Debug.colours['yellow'])
+		Debug.draw_polygon(polygon)
+		Debug.draw_dots(intermediary_dots, Debug.colours['red'])
+		Debug.draw_dots(extra_dots, Debug.colours['yellow'])
 		Debug.add_image(f"Composed polygon {self} ({len(polygon)} dots, {len(intermediary_dots)} intermediary)")
 
 		# Find dots nearby one another
@@ -410,12 +403,7 @@ class Panel:
 		if len(nearby_dots) == 0:
 			return None
 
-		for dots in nearby_dots:
-			dot1 = polygon[dots[0]][0]
-			dot2 = polygon[dots[1]][0]
-			Debug.draw_dot(dot1[0], dot1[1], Debug.colours['lightpurple'])
-			Debug.draw_dot(dot2[0], dot2[1], Debug.colours['lightpurple'])
-			Debug.draw_line(dot1, dot2, Debug.colours['lightpurple'], size = 1)
+		Debug.draw_nearby_dots(polygon, nearby_dots)
 		Debug.add_image(f"Nearby dots ({len(nearby_dots)})")
 
 		splits = []
@@ -457,8 +445,7 @@ class Panel:
 			if split not in splits:
 				splits.append(split)
 
-		for split in splits:
-			Debug.draw_line(split.segment.a, split.segment.b, Debug.colours['red'], size = 2)
+		Debug.draw_segments([split.segment for split in splits], Debug.colours['red'], size = 2)
 		Debug.add_image(f"Splits ({len(splits)})")
 
 		splits = list(filter(lambda split: split.segments_coverage() > 50 / 100, splits))

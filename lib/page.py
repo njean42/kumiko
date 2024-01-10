@@ -54,7 +54,7 @@ class Page:
 		self.img_size = list(self.img.shape[:2])
 		self.img_size.reverse()  # get a [width,height] list
 
-		Debug.contourSize = 3
+		Debug.contour_size = 3
 
 		# get license for this file
 		self.license = None
@@ -153,8 +153,7 @@ class Page:
 
 		self.segments = Segment.union_all(self.segments)
 
-		for s in self.segments:
-			Debug.draw_line(s.a, s.b, Debug.colours['green'])
+		Debug.draw_segments(self.segments, Debug.colours['green'])
 		Debug.add_image("Segment Detector")
 		Debug.show_time("Compiled segments")
 
