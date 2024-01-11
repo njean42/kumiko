@@ -5,10 +5,15 @@ import os
 import json
 import argparse
 import subprocess, hashlib
+import shutil
+
+from pdf2image import convert_from_path
 
 from kumikolib import Kumiko
 from lib.html import HTML
 from lib.debug import Debug
+
+info = []
 
 parser = argparse.ArgumentParser(description = 'Kumiko CLI')
 
@@ -32,6 +37,18 @@ parser.add_argument(
 	nargs = 1,
 	help =
 	'When generating HTML, this will be the relative directory for javascript files: <script src="$static-dir/...">  (implies --html)'
+)
+parser.add_argument(
+	"-s",
+	"--save-panels",
+	action = "store_true",
+	help = "Enable this option to save detected panels as images",
+)
+
+parser.add_argument(
+	"--pdf",
+	action = "store_true",
+	help = "Indicates the input is a PDF file to be converted to images",
 )
 
 # Configuration tweaks
@@ -63,33 +80,76 @@ file_or_folder = args.input[0]
 folder = None
 html_file = None
 
+# PDF File
+if args.pdf:
+	if not os.path.isfile(file_or_folder):
+		print("The specified file is not a valid PDF.")
+		sys.exit(1)
+
+	parentFolderName = os.path.basename(os.path.dirname(file_or_folder))
+	pdfBaseName = os.path.splitext(os.path.basename(file_or_folder))[0]
+	outputBasePath = os.path.join("./output", parentFolderName, pdfBaseName)
+
+	# Convert PDF to images
+	images = convert_from_path(file_or_folder)
+	for i, image in enumerate(images):
+		image_output_path = os.path.join(outputBasePath, f"page_{i}.jpg")
+		if not os.path.exists(outputBasePath):
+			os.makedirs(outputBasePath)
+		image.save(image_output_path, "JPEG")
+
+		if args.save_panels:
+			# Process each image
+			info = k.parse_images([image_output_path])
+			for item in info:
+				panel_output_path = os.path.join(outputBasePath, f"page_{i}")
+				k.save_panels(image_output_path, item["panels"], panel_output_path)
 # Folder
-if len(args.input) == 1 and os.path.isdir(args.input[0]):
+elif len(args.input) == 1 and os.path.isdir(args.input[0]):
 	folder = args.input[0]
 	if folder[-1] == '/':
 		folder = folder[0:-1]
-	k.parse_dir(folder)
+	info = k.parse_dir(folder)
 	html_file = os.path.join('tests/results', os.path.basename(folder) + '.html')
 
+	if args.save_panels:
+		for f in os.listdir(folder):
+			file_path = os.path.join(folder, f)
+			if os.path.isfile(file_path):
+				panels_info = k.parse_images([file_path])
+				for item in panels_info:
+					output_path = os.path.join("./output", originalFolderName, os.path.splitext(f)[0])
+					k.save_panels(file_path, item["panels"], output_path)
 # File
 elif len(args.input) == 1 and os.path.isfile(args.input[0]):
 	f = args.input[0]
 	folder = os.path.dirname(f)
 	if not folder:
 		folder = './'
-	k.parse_images([f])
+	info = k.parse_images([f])
 	html_file = os.path.join('tests/results', os.path.basename(f) + '.html')
-
+	info = k.get_infos()
+	if args.save_panels:
+		k.save_panels(f, info[0]["panels"])
 # URL list
 else:
 	folder = 'urls'
-	k.parse_url_list(args.input)
+	downloaded_files, info = k.parse_url_list(args.input)
 	filehash = hashlib.sha1(';'.join(sorted(args.input)).encode()).hexdigest()
 	html_file = os.path.join('tests/results', filehash + '.html')
 
+	if args.save_panels:
+		for file_path in downloaded_files:
+			panels_info = k.parse_images([file_path])
+			for item in panels_info:
+				k.save_panels(file_path, item["panels"])
+
+	# Delete the temporary directory after processing
+	shutil.rmtree(os.path.dirname(downloaded_files[0]))
+
 infos = k.get_infos()
 
-if len(infos) == 0:
+if info is None or len(infos) == 0:
 	print("--input (-i) is not a file, or directory, or URL list: '" + str(args.input) + "'")
 	sys.exit(1)
 

@@ -100,7 +100,8 @@ class Page:
 		self.exclude_small_panels()
 
 		self.panels.sort()  # TODO: move this below before panels sort-fix, when panels expansion is smarter
-		self.expand_panels()
+		# Don't expand borders, as we want to clip these to the exact size of the panel when we save them
+		#self.expand_panels()
 
 		if len(self.panels) == 0:
 			self.panels.append(Panel(page = self, xywh = [0, 0, self.img_size[0], self.img_size[1]]))
