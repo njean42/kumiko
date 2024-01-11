@@ -57,7 +57,7 @@ parser.add_argument(
 	nargs = 1,
 	type = float,
 	help =
-	'Panels will be considered too small and exluded if they have a width < img.width * ratio or height < img/height * ratio (default is 1/15th)'
+	'Panels will be considered too small and exluded if they have a width < img.width * ratio or height < img/height * ratio (default is 1/10th)'
 )
 
 # Utilities
