@@ -31,29 +31,40 @@ class Kumiko:
 		if self.options['progress']:
 			print(len(urls), 'files to download', file = sys.stderr)
 
-		with tempfile.TemporaryDirectory() as tempdir:
-			i = 0
-			nbdigits = len(str(len(urls)))
-			downloaded_files = []
-			for url in urls:
-				filename = 'img' + ('0' * nbdigits + str(i))[-nbdigits:]
+		self.temp_folder = tempfile.TemporaryDirectory()
 
-				if self.options['progress']:
-					print('\t', url, (' -> ' + filename) if urls else '', file = sys.stderr)
+		i = 0
+		nbdigits = len(str(len(urls)))
+		for url in urls:
+			filename = 'img' + ('0' * nbdigits + str(i))[-nbdigits:]
 
-				i += 1
-				parts = urlparse(url)
-				if not parts.netloc or not parts.path:
-					continue
+			if self.options['progress']:
+				print('\t', url, (' -> ' + filename) if urls else '', file = sys.stderr)
 
-				r = requests.get(url, timeout = 5)
-				with open(os.path.join(tempdir, filename), 'wb') as f:
-					f.write(r.content)
+			i += 1
+			parts = urlparse(url)
+			if not parts.netloc or not parts.path:
+				continue
 
-				downloaded_files.append(os.path.join(tempdir, filename))
+			r = requests.get(url, timeout = 5)
+			with open(os.path.join(self.temp_folder.name, filename), 'wb') as f:
+				f.write(r.content)
 
-			parsed_info = self.parse_dir(tempdir, urls = urls)
-			return downloaded_files, parsed_info
+		self.parse_dir(self.temp_folder.name, urls = urls)
+
+	def parse_pdf_file(self, pdf_filename):
+		try:
+			import pdf2image
+		except ModuleNotFoundError:
+			print("Please `pip install pdf2image` if you give PDF --input files to Kumiko", file = sys.stderr)
+			sys.exit(1)
+
+		self.temp_folder = tempfile.TemporaryDirectory()
+		for image in pdf2image.convert_from_path(file_or_folder):
+			image_output_path = os.path.join(self.temp_folder.name, f"page_{i}.jpg")
+			image.save(image_output_path, "JPEG")
+
+		return self.parse_dir(self.temp_folder.name)
 
 	def parse_dir(self, directory, urls = None):
 		filenames = []
@@ -62,7 +73,6 @@ class Kumiko:
 		return self.parse_images(filenames, urls)
 
 	def parse_images(self, filenames, urls = None):
-		self.page_list = []
 		infos = []
 
 		if self.options['progress']:
@@ -94,21 +104,13 @@ class Kumiko:
 	def get_infos(self):
 		return list(map(lambda p: p.get_infos(), self.page_list))
 
-	def save_panels(self, image_path, panels, output_path = None, output_format = "jpg"):
-		# Set default output_dir if not specified
-		if output_path is None:
-			base_name = os.path.splitext(os.path.basename(image_path))[0]
-			output_path = os.path.join("./output", base_name)
-
-		# Ensure the output directory exists
+	def save_panels(self, output_format = "jpg"):
+		output_path = "/tmp/kumiko-out"  # TODO
 		if not os.path.exists(output_path):
 			os.makedirs(output_path)
 
-		# Load the original image
-		image = cv.imread(image_path)
-
-		# Iterate over each panel and save it
-		for i, (x, y, width, height) in enumerate(panels):
-			panel = image[y:y + height, x:x + width]
-			output_file = os.path.join(output_path, f"panel_{i}.{output_format}")
-			cv.imwrite(output_file, panel)
+		for page in self.page_list:
+			for i, (x, y, width, height) in enumerate(panels):
+				panel = page.img[y:y + height, x:x + width]
+				output_file = os.path.join(output_path, f"panel_{i}.{output_format}")
+				cv.imwrite(output_file, panel)
