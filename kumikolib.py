@@ -105,12 +105,20 @@ class Kumiko:
 		return list(map(lambda p: p.get_infos(), self.page_list))
 
 	def save_panels(self, output_format = "jpg"):
-		output_path = "/tmp/kumiko-out"  # TODO
-		if not os.path.exists(output_path):
-			os.makedirs(output_path)
+		output_base_path = tempfile.mkdtemp(prefix = "kumiko-out-")
 
+		nb_written_panels = 0
 		for page in self.page_list:
-			for i, (x, y, width, height) in enumerate(panels):
-				panel = page.img[y:y + height, x:x + width]
+			output_path = os.path.join(output_base_path, os.path.basename(page.filename))
+			os.makedirs(output_path, exist_ok = True)
+
+			for i, panel in enumerate(page.panels):
+				x, y, width, height = panel.to_xywh()
 				output_file = os.path.join(output_path, f"panel_{i}.{output_format}")
-				cv.imwrite(output_file, panel)
+				panel = page.img[y:y + height, x:x + width]
+				if cv.imwrite(output_file, panel):
+					nb_written_panels += 1
+				else:
+					print(f"Failed to write panel image to {output_file}", file = sys.stderr)
+
+		print(f"Saved {nb_written_panels} panel images to {output_base_path}", file = sys.stderr)
