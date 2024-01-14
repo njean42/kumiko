@@ -16,7 +16,7 @@ class Tester:
 	files = []
 	git_repo = '.'
 	git_versions = [
-		'v1.4.2',
+		'v1.5',
 		'current',
 	]
 
@@ -66,7 +66,7 @@ class Tester:
 				file_or_dir = f if isinstance(f, str) else f.name
 				print(f"\n##### Kumiko-cutting {file_or_dir} ({git_version}) #####")
 
-				subprocess.run(['mkdir', '-p', os.path.join(self.savedir, git_version)], check = True)
+				os.makedirs(os.path.join(self.savedir, git_version), exist_ok = True)
 				jsonfile = os.path.join(self.savedir, git_version, os.path.basename(f) + '.json')
 
 				subprocess.run(args = [kumiko_bin, '-i', f, '-o', jsonfile, '--progress'], check = True)
