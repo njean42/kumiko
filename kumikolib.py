@@ -65,17 +65,15 @@ class Kumiko:
 		print(f"Using pdftoppm to extract jpeg files from pdf to {self.temp_folder}", file = sys.stderr)
 		subprocess.run(args = ['pdftoppm', '-jpeg', pdf_filename, f"{self.temp_folder}/"], check = True)
 
-		return self.parse_dir(self.temp_folder)
+		self.parse_dir(self.temp_folder)
 
 	def parse_dir(self, directory, urls = None):
 		filenames = []
 		for filename in os.scandir(directory):
 			filenames.append(filename.path)
-		return self.parse_images(filenames, urls)
+		self.parse_images(filenames, urls)
 
 	def parse_images(self, filenames, urls = None):
-		infos = []
-
 		if self.options['progress']:
 			print(len(filenames), 'files to cut panels for', file = sys.stderr)
 
@@ -86,11 +84,10 @@ class Kumiko:
 				print("\t", urls[i] if urls else filename, file = sys.stderr)
 
 			try:
-				infos.append(self.parse_image(filename, url = urls[i] if urls else None))
+				self.parse_image(filename, url = urls[i] if urls else None)
 			except NotAnImageException:
 				if not filename.endswith(".license"):
 					print(f"Not an image, will be ignored: {filename}", file = sys.stderr)
-		return infos
 
 	def parse_image(self, filename, url = None):
 		self.page_list.append(

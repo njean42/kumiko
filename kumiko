@@ -42,12 +42,6 @@ parser.add_argument(
 	help = "Save detected panels as images",
 )
 
-parser.add_argument(
-	"--pdf",
-	action = "store_true",
-	help = "Indicates the input is a PDF file to be converted to images",
-)
-
 # Configuration tweaks
 parser.add_argument(
 	'--min-panel-size-ratio',
