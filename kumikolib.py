@@ -4,6 +4,7 @@ import tempfile
 import cv2 as cv
 import numpy as np
 import requests
+import subprocess
 from urllib.parse import urlparse
 
 from lib.page import Page, NotAnImageException
@@ -54,17 +55,17 @@ class Kumiko:
 
 	def parse_pdf_file(self, pdf_filename):
 		try:
-			import pdf2image
-		except ModuleNotFoundError:
-			print("Please `pip install pdf2image` if you give PDF --input files to Kumiko", file = sys.stderr)
+			subprocess.run(args = ['pdftoppm', '--help'], check = True, capture_output = True)
+		except FileNotFoundError:
+			print("Please `apt install pdftoppm` if you give PDF --input files to Kumiko", file = sys.stderr)
 			sys.exit(1)
 
-		self.temp_folder = tempfile.TemporaryDirectory()
-		for image in pdf2image.convert_from_path(file_or_folder):
-			image_output_path = os.path.join(self.temp_folder.name, f"page_{i}.jpg")
-			image.save(image_output_path, "JPEG")
+		self.temp_folder = tempfile.mkdtemp(prefix = "kumiko-pdf-pages-")
 
-		return self.parse_dir(self.temp_folder.name)
+		print(f"Using pdftoppm to extract jpeg files from pdf to {self.temp_folder}", file = sys.stderr)
+		subprocess.run(args = ['pdftoppm', '-jpeg', pdf_filename, f"{self.temp_folder}/"], check = True)
+
+		return self.parse_dir(self.temp_folder)
 
 	def parse_dir(self, directory, urls = None):
 		filenames = []

@@ -73,6 +73,7 @@ k = Kumiko(
 	}
 )
 
+folder = None
 html_file = None
 
 # Folder
@@ -97,6 +98,7 @@ elif len(args.input) == 1 and os.path.isfile(args.input[0]):
 
 	if re.search(r'\.pdf$', filename, re.I):
 		k.parse_pdf_file(filename)
+		folder = k.temp_folder
 	else:
 		k.parse_image(filename)
 
