@@ -35,7 +35,7 @@ parser.add_argument(
 	help =
 	'When generating HTML, this will be the relative directory for javascript files: <script src="$static-dir/...">  (implies --html)'
 )
-parser.add_argument("-s", "--save-panels", nargs = '?', help = "Save detected panels as images", const = "auto")
+parser.add_argument('-s', '--save-panels', nargs = '?', help = 'Save detected panels as images', const = 'auto')
 
 # Configuration tweaks
 parser.add_argument(
@@ -44,6 +44,12 @@ parser.add_argument(
 	type = float,
 	help =
 	'Panels will be considered too small and exluded if they have a width < img.width * ratio or height < img/height * ratio (default is 1/10th)'
+)
+
+parser.add_argument(
+	'--no-panel-expansion',
+	action = 'store_true',
+	help = 'Disable panel expansion (may be desirable with --save-panels)'
 )
 
 # Utilities
@@ -58,7 +64,8 @@ k = Kumiko(
 		'debug': args.debug,
 		'progress': args.progress,
 		'rtl': args.rtl,
-		'min_panel_size_ratio': args.min_panel_size_ratio[0] if args.min_panel_size_ratio else False
+		'min_panel_size_ratio': args.min_panel_size_ratio[0] if args.min_panel_size_ratio else False,
+		'panel_expansion': not args.no_panel_expansion,
 	}
 )
 

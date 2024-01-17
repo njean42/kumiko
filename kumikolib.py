@@ -26,6 +26,8 @@ class Kumiko:
 		self.options['min_panel_size_ratio'
 						] = options['min_panel_size_ratio'] if 'min_panel_size_ratio' in options else None
 
+		self.panel_expansion = options.get('panel_expansion', True)
+
 		self.page_list = []
 
 	def parse_url_list(self, urls):
@@ -95,7 +97,8 @@ class Kumiko:
 				filename,
 				numbering = "rtl" if self.options['rtl'] else "ltr",
 				url = url,
-				min_panel_size_ratio = self.options['min_panel_size_ratio']
+				min_panel_size_ratio = self.options['min_panel_size_ratio'],
+				panel_expansion = self.panel_expansion,
 			)
 		)
 
