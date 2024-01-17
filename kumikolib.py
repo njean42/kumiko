@@ -20,8 +20,7 @@ class Kumiko:
 
 		Debug.debug = self.options['debug']
 
-		self.options['min_panel_size_ratio'
-						] = options['min_panel_size_ratio'] if 'min_panel_size_ratio' in options else None
+		self.options['min_panel_size_ratio'] = options.get('min_panel_size_ratio', None)
 
 		self.page_list = []
 

@@ -4,10 +4,12 @@
 
 Small changes in code often lead to many and unexpected panels to be detected differently.
 
-To have an overview of the consequences of code changes, a testing tool is provided.
+To have an overview of the consequences of code changes, a testing tool is provided (see [tester.py section](#tester.py)).
+
+[Unit tests](#unit-tests) also make sure that *Kumiko* features don't regress when changing code.
 
 
-# tester.py
+## tester.py
 
 Basically switch to `kumiko` top-level directory and run:
 
@@ -18,7 +20,7 @@ This will run *Kumiko*, your modified version, on all the comic page templates p
 But it will also run *Kumiko*'s previous version on the same files and check the differences!
 
 
-# Results
+### Results
 
 An HTML file is generated under `./tests/results/` that you can open locally (add `-b` to open it automatically in firefox).
 
@@ -31,3 +33,12 @@ Take a look at improvements in successive *Kumiko* versions:
 * [v1.2.1](https://kumiko.njean.me/tests/results/diff-v1.2-v1.2.1.html)
 * [v1.2](https://kumiko.njean.me/tests/results/diff-v1.1-v1.2.html)
 * [v1.1](https://kumiko.njean.me/tests/results/diff-v1.0-v1.1.html)
+
+
+# Unit Tests
+
+Simply run:
+
+```bash
+python -m unittest discover -s tests
+```
