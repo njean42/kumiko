@@ -87,7 +87,7 @@ class Kumiko:
 				self.parse_image(filename, url = urls[i] if urls else None)
 			except NotAnImageException:
 				if not filename.endswith(".license"):
-					print(f"Not an image, will be ignored: {filename}", file = sys.stderr)
+					print(f"\n[ERROR] Not an image, will be ignored: {filename}\n", file = sys.stderr)
 
 	def parse_image(self, filename, url = None):
 		self.page_list.append(
@@ -102,8 +102,14 @@ class Kumiko:
 	def get_infos(self):
 		return list(map(lambda p: p.get_infos(), self.page_list))
 
-	def save_panels(self, output_format = "jpg"):
-		output_base_path = tempfile.mkdtemp(prefix = "kumiko-out-")
+	def save_panels(self, output_base_path = "auto", output_format = "jpg"):
+		if output_base_path == "auto":
+			output_base_path = tempfile.mkdtemp(prefix = "kumiko-out-")
+		elif not os.path.isdir(output_base_path):
+			print(
+				f"\n[ERROR] Given --save-panels directory is not a directory: {output_base_path}\n", file = sys.stderr
+			)
+			sys.exit(1)
 
 		nb_written_panels = 0
 		for page in self.page_list:
@@ -117,6 +123,6 @@ class Kumiko:
 				if cv.imwrite(output_file, panel):
 					nb_written_panels += 1
 				else:
-					print(f"Failed to write panel image to {output_file}", file = sys.stderr)
+					print(f"\n[ERROR] Failed to write panel image to {output_file}\n", file = sys.stderr)
 
 		print(f"Saved {nb_written_panels} panel images to {output_base_path}", file = sys.stderr)

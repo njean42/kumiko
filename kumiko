@@ -35,12 +35,7 @@ parser.add_argument(
 	help =
 	'When generating HTML, this will be the relative directory for javascript files: <script src="$static-dir/...">  (implies --html)'
 )
-parser.add_argument(
-	"-s",
-	"--save-panels",
-	action = "store_true",
-	help = "Save detected panels as images",
-)
+parser.add_argument("-s", "--save-panels", nargs = '?', help = "Save detected panels as images", const = "auto")
 
 # Configuration tweaks
 parser.add_argument(
@@ -107,7 +102,7 @@ else:
 infos = k.get_infos()
 
 if len(infos) == 0:
-	print("--input (-i) is not an image or pdf file, or directory, or URL list: '" + str(args.input) + "'")
+	print(f"--input (-i) is not an image or pdf file, or directory, or URL list: '{args.input}'")
 	sys.exit(1)
 
 infos = json.dumps(infos)
@@ -132,7 +127,7 @@ if args.html or args.browser or args.html_static_dir or args.debug:
 		fh = open(html_file, 'w')
 		fh.write(html)
 		fh.close()
-		print('Saved HTML file:', html_file)
+		print(f"Saved HTML file: {html_file}")
 	else:
 		print(html)
 
@@ -151,4 +146,4 @@ if args.browser:
 
 # Save panels to separate image files
 if args.save_panels:
-	k.save_panels()
+	k.save_panels(args.save_panels)
