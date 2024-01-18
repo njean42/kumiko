@@ -104,8 +104,8 @@ class Kumiko:
 	def get_infos(self):
 		return list(map(lambda p: p.get_infos(), self.page_list))
 
-	def save_panels(self, output_base_path = "auto", output_format = "jpg"):
-		if output_base_path == "auto":
+	def save_panels(self, output_base_path = 'auto', output_format = "jpg"):
+		if output_base_path == 'auto':
 			output_base_path = tempfile.mkdtemp(prefix = "kumiko-out-")
 		elif not os.path.isdir(output_base_path):
 			print(
