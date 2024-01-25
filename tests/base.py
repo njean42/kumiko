@@ -6,11 +6,24 @@ from lib.panel import Panel
 
 class BaseTest(unittest.TestCase):
 
+	@staticmethod
+	def run_all():
+		unittest.main()
+
 	def setUp(self):
 		self.empty_tests_results()
 
 	def tearDown(self):
 		self.empty_tests_results()
+
+	results_dir_id = 0
+
+	@staticmethod
+	def results_dir():
+		BaseTest.results_dir_id += 1
+		new_dir = f"./tests/results/kumiko-unittests-{BaseTest.results_dir_id}"
+		os.makedirs(new_dir)
+		return new_dir
 
 	def empty_tests_results(self):
 		with os.scandir('./tests/results') as it:

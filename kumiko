@@ -4,7 +4,9 @@ import sys
 import os
 import json
 import argparse
-import subprocess, hashlib
+import subprocess
+import hashlib
+import re
 
 from kumikolib import Kumiko
 from lib.html import HTML
@@ -33,6 +35,7 @@ parser.add_argument(
 	help =
 	'When generating HTML, this will be the relative directory for javascript files: <script src="$static-dir/...">  (implies --html)'
 )
+parser.add_argument('-s', '--save-panels', nargs = '?', help = 'Save detected panels as images', const = 'auto')
 
 # Configuration tweaks
 parser.add_argument(
@@ -41,6 +44,12 @@ parser.add_argument(
 	type = float,
 	help =
 	'Panels will be considered too small and exluded if they have a width < img.width * ratio or height < img/height * ratio (default is 1/10th)'
+)
+
+parser.add_argument(
+	'--no-panel-expansion',
+	action = 'store_true',
+	help = 'Disable panel expansion (may be desirable with --save-panels)'
 )
 
 # Utilities
@@ -55,11 +64,11 @@ k = Kumiko(
 		'debug': args.debug,
 		'progress': args.progress,
 		'rtl': args.rtl,
-		'min_panel_size_ratio': args.min_panel_size_ratio[0] if args.min_panel_size_ratio else False
+		'min_panel_size_ratio': args.min_panel_size_ratio[0] if args.min_panel_size_ratio else False,
+		'panel_expansion': not args.no_panel_expansion,
 	}
 )
 
-file_or_folder = args.input[0]
 folder = None
 html_file = None
 
@@ -68,29 +77,39 @@ if len(args.input) == 1 and os.path.isdir(args.input[0]):
 	folder = args.input[0]
 	if folder[-1] == '/':
 		folder = folder[0:-1]
-	k.parse_dir(folder)
+
 	html_file = os.path.join('tests/results', os.path.basename(folder) + '.html')
 
-# File
+	k.parse_dir(folder)
+
+# File (image or pdf)
 elif len(args.input) == 1 and os.path.isfile(args.input[0]):
-	f = args.input[0]
-	folder = os.path.dirname(f)
+	filename = args.input[0]
+
+	folder = os.path.dirname(filename)
 	if not folder:
 		folder = './'
-	k.parse_images([f])
-	html_file = os.path.join('tests/results', os.path.basename(f) + '.html')
+
+	html_file = os.path.join('tests/results', os.path.basename(filename) + '.html')
+
+	if re.search(r'\.pdf$', filename, re.I):
+		k.parse_pdf_file(filename)
+		folder = k.temp_folder
+	else:
+		k.parse_image(filename)
 
 # URL list
 else:
 	folder = 'urls'
-	k.parse_url_list(args.input)
 	filehash = hashlib.sha1(';'.join(sorted(args.input)).encode()).hexdigest()
 	html_file = os.path.join('tests/results', filehash + '.html')
+
+	k.parse_url_list(args.input)
 
 infos = k.get_infos()
 
 if len(infos) == 0:
-	print("--input (-i) is not a file, or directory, or URL list: '" + str(args.input) + "'")
+	print(f"--input (-i) is not an image or pdf file, or directory, or URL list: '{args.input}'")
 	sys.exit(1)
 
 infos = json.dumps(infos)
@@ -115,7 +134,7 @@ if args.html or args.browser or args.html_static_dir or args.debug:
 		fh = open(html_file, 'w')
 		fh.write(html)
 		fh.close()
-		print('Saved HTML file:', html_file)
+		print(f"Saved HTML file: {html_file}")
 	else:
 		print(html)
 
@@ -131,3 +150,7 @@ else:
 # Open in browser
 if args.browser:
 	subprocess.run([args.browser, html_file])
+
+# Save panels to separate image files
+if args.save_panels:
+	k.save_panels(args.save_panels)

@@ -44,6 +44,11 @@ Note that, although *Kumiko* can detect panels with arbitrary shapes, it will re
 This is because in the end, many things are rectangular: image files, our screens to display them...
 We may want an option in the future to get more accurate polygons instead.
 
+### Cut out panels ⚔️
+
+Add `-s` or `--save-panels` to create an image file for each panel found (optionaly followed by the output directory of your choice).
+
+
 ## Get panel information for all pages in one comic book
 
 	kumiko -i /path/to/comicbook/

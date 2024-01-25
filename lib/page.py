@@ -32,7 +32,15 @@ class Page:
 			'processing_time': self.processing_time
 		}
 
-	def __init__(self, filename, numbering = None, debug = False, url = None, min_panel_size_ratio = None):
+	def __init__(
+		self,
+		filename,
+		numbering = None,
+		debug = False,
+		url = None,
+		min_panel_size_ratio = None,
+		panel_expansion = True
+	):
 		self.filename = filename
 		self.panels = []
 		self.segments = []
@@ -49,6 +57,7 @@ class Page:
 			raise Exception('Fatal error, unknown numbering: ' + str(numbering))
 
 		self.small_panel_ratio = min_panel_size_ratio or Page.DEFAULT_MIN_PANEL_SIZE_RATIO
+		self.panel_expansion = panel_expansion
 		self.url = url
 
 		self.img_size = list(self.img.shape[:2])
@@ -99,8 +108,9 @@ class Page:
 		self.deoverlap_panels()
 		self.exclude_small_panels()
 
-		self.panels.sort()  # TODO: move this below before panels sort-fix, when panels expansion is smarter
-		self.expand_panels()
+		if self.panel_expansion:
+			self.panels.sort()  # TODO: move this below before panels sort-fix, when panels expansion is smarter
+			self.expand_panels()
 
 		if len(self.panels) == 0:
 			self.panels.append(Panel(page = self, xywh = [0, 0, self.img_size[0], self.img_size[1]]))
