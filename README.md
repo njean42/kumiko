@@ -1,4 +1,23 @@
+Trying out [https://maxhalford.github.io/blog/comic-book-panel-segmentation/] approach with poetry for packages and using pkgx for the runtime.
 
+To install deps:
+
+* pkgx poetry self add poetry-plugin-export
+* pkgx poetry export --output requirements.txt
+* pkgx pip install -r
+
+Running an alternative not fully integrated eg. `../../../kumiko/alt/__init__.py -i comic-page.png `
+
+
+My goal with this: 
+* cut up pages into panels
+* create a hugo content file 
+* create a json file 
+* May possibly turn reader.js into a lit element or react
+
+
+Original docs below
+------------
 
 # Introduction
 

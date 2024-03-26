@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "kumiko"
+version = "0.1.0"
+description = ""
+authors = ["Daniel <driedtoast@gmail.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+opencv-python = "^4.9.0.80"
+scikit-image = "^0.22.0"
+requests = "^2.31.0"
+pillow = "^10.2.0"
+image = "^1.5.33"
+numpy = "^1.26.4"
+
+
+[tool.poetry.scripts]
+alt = "alt"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
