@@ -162,7 +162,8 @@ class Panel:
 
 		# intersect
 		intersection_y = min(above.b, below.b) - below.y
-		return intersection_y / min(above.h(), below.h()) >= 1 / 3
+		min_h = min(above.h(), below.h())
+		return min_h == 0 or intersection_y / min_h >= 1 / 3
 
 	def same_col(self, other):
 		left, right = sorted([self, other], key = lambda p: p.x)
@@ -175,7 +176,8 @@ class Panel:
 
 		# intersect
 		intersection_x = min(left.r, right.r) - right.x
-		return intersection_x / min(left.w(), right.w()) >= 1 / 3
+		min_w =  min(left.w(), right.w())
+		return min_w == 0 or intersection_x / min_w >= 1 / 3
 
 	def find_top_panel(self):
 		all_top = list(filter(lambda p: p.b <= self.y and p.same_col(self), self.page.panels))
