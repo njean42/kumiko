@@ -191,5 +191,7 @@ class Segment:
 		p = np.array(p)
 		ap = p - a
 		ab = b - a
+		if ab[0] == 0 and ab[1] == 0:
+			return a
 		result = a + np.dot(ap, ab) / np.dot(ab, ab) * ab
 		return (round(result[0]), round(result[1]))
