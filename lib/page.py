@@ -224,7 +224,8 @@ class Page:
 
 			self.panels.append(big_panel)
 			for p in small_panels:
-				self.panels.remove(p)
+				if p in self.panels:
+					self.panels.remove(p)
 
 			Debug.draw_contours(list(map(lambda p: p.polygon, small_panels)), Debug.colours['lightblue'])
 			Debug.draw_contours([big_panel.polygon], Debug.colours['red'])
@@ -240,7 +241,7 @@ class Page:
 			did_split = False
 			for p in sorted(self.panels, key = lambda p: p.area(), reverse = True):
 				split = p.split()
-				if split is not None:
+				if split is not None and p in self.panels:
 					did_split = True
 					self.panels.remove(p)
 					self.panels += split.subpanels
@@ -297,7 +298,8 @@ class Page:
 					p2 = p2.merge(p1)
 
 		for p in set(panels_to_remove):
-			self.panels.remove(p)
+			if p in self.panels:
+				self.panels.remove(p)
 
 		Debug.add_step('Merge panels', self.get_infos())
 
